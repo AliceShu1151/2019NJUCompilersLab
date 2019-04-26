@@ -1,0 +1,26 @@
+int i,j;
+int a[2][3];
+
+struct x
+{
+	int a[2][3];
+};
+
+struct y
+{
+	int a;
+	float a;
+};
+
+struct z
+{
+	int a,b;
+	float c;
+};
+
+int main() 
+{
+	int i = 0;
+	j = i + 1;
+}
+

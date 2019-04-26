@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "stdio.h": "c",
+        "semantic_operate.h": "c"
+    }
+}

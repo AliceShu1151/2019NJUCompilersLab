@@ -44,7 +44,7 @@ void init_struct_type_table()
 
 void init_symbol_table()
 {
-    init_enviroment_stack(&symbol_table.env_stack);
+    symbol_table.env_stack_top = init_enviroment_stack();
     init_hash_table(&symbol_table.h_table);
 }
 
@@ -108,11 +108,15 @@ type_t *struct_table_find_name(const char *struct_name)
     return NULL;
 }
 
-
-
-void symbol_table_check_add(symbol_t *symbol)
+symbol_t *symbol_table_find_name(symbol_t *symbol)
 {
 
+}
+
+void symbol_table_add(symbol_t *symbol)
+{
+    unsigned int hash_num = hash_pjw(symbol->name);
+    st_node_t *new_node = create_st_node(symbol, &symbol_table.h_table[hash_num]);
 }
 
 

@@ -10,16 +10,19 @@ void init_type_list(type_list_t *type_list)
 }
 
 
-void init_enviroment_stack(env_stack_t *env_stack)
+env_node_t *init_enviroment_stack()
 {
-    env_stack->top = NULL;
+    env_node_t *rtn = malloc(sizeof(env_node_t));
+    rtn->env_symbol_list = NULL;
+    rtn->next_layer = NULL;
+    return rtn;
 }
 
-void init_hash_table(hash_table_t *h_table)
+void init_hash_table(st_node_t *h_table)
 {
-    for(size_t i = 0; i < HASH_table_SIZE; i++)
+    for(size_t i = 0; i < HASH_TABLE_SIZE; i++)
     {
-        h_table->ht_node[i].is_empyty = EMPTY;
+        h_table[i] = NULL;
     }
 }
 
@@ -50,6 +53,23 @@ type_struct_t *create_type_struct(const char *name, field_list_t *field_list)
     return rtn;
 }
 
+type_func_t *create_type_func(type_t* rtn_type, field_list_t *param_list)
+{
+    type_func_t *rtn = malloc(sizeof(type_func_t));
+    rtn->type_kind = TYPE_FUNCTION;
+    rtn->return_type = rtn_type;
+    rtn->parameters = param_list;
+    return rtn;
+}
+
+void init_symbol(symbol_t *symbol, const char *name, type_t *type, int lineno, int is_defined)
+{
+    symbol->name = name;
+    symbol->lineno = lineno;
+    symbol->type = type;
+    symbol->is_defined = is_defined;
+}
+
 field_node_t *create_field_node(const char* name, type_t *type)
 {
     field_node_t *rtn = malloc(sizeof(field_node_t));
@@ -68,7 +88,36 @@ field_list_t *create_field_list()
     return rtn; 
 }
 
+st_node_t *create_st_node(symbol_t *symbol, st_node_t *old_st_node)
+{
+    if (old_st_node->is_empty == EMPTY) 
+    {
+        old_st_node->symbol = symbol;
+        old_st_node->is_empty =NOT_EMPTY;   
+        return old_st_node;    
+    }
+    else
+    {
+        st_node_t *rtn = malloc(sizeof(st_node_t));
+        
+    }
+    
+    
+}
 
+
+unsigned int hash_pjw(const char *name)
+{
+    unsigned int val = 0, i;
+    for(const char *itor = name; *itor; ++itor)
+    {
+        val = (val << 2) + *itor;
+        if (i == val & ~HASH_TABLE_SIZE) {
+            val = (val ^ (i >> 12)) & HASH_TABLE_SIZE;
+        }
+    }
+    return val;
+}
 
 void print_field_list(field_list_t *field_list)
 {

@@ -19,4 +19,5 @@ void field_list_push_back(field_list_t *field_list, type_t *type, const char *na
 void struct_table_push_back(type_struct_t *new_struct);
 type_t *struct_table_find_name(const char *struct_name);
 
-void symbol_table_check_add(symbol_t *symbol);
+void symbol_table_add(symbol_t * symbol);
+symbol_t *symbol_table_find_name(symbol_t *symbol);

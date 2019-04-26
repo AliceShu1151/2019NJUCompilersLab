@@ -108,16 +108,59 @@ type_t *struct_table_find_name(const char *struct_name)
     return NULL;
 }
 
+st_node_t *env_layer_find_name(st_node_t *node_list, const char *name)
+{
+    for(st_node_t *itor = node_list; itor != NULL; itor = itor->sibling)
+    {
+        if (strcmp(itor->symbol->name, name) == 0) 
+        {
+            return itor;
+        }
+    }
+    return NULL;
+}
+
+
+st_node_t *top_env_layer_find_name(const char *name)
+{
+    return env_layer_find_name(symbol_table.env_stack_top->env_node_list, name);
+}
+
 symbol_t *symbol_table_find_name(symbol_t *symbol)
 {
+    st_node_t *rtn;
+    for(env_layer_t *itor = symbol_table.env_stack_top; itor != NULL; itor = itor->next_layer)
+    {
+        rtn = env_layer_find_name(itor->env_node_list, symbol->name);
+        if (rtn != NULL) 
+        {
+            return rtn->symbol;
+        }
+    }
+    return NULL;
+}
 
+void env_layer_add_node(st_node_t *new_node)
+{
+    if (symbol_table.env_stack_top->env_node_list == NULL) 
+    {
+        symbol_table.env_stack_top->env_node_list = new_node;
+    }
+    else
+    {
+        new_node->sibling = symbol_table.env_stack_top->env_node_list;
+        symbol_table.env_stack_top->env_node_list = new_node;
+    }
 }
 
 void symbol_table_add(symbol_t *symbol)
 {
-    unsigned int hash_num = hash_pjw(symbol->name);
-    st_node_t *new_node = create_st_node(symbol, &symbol_table.h_table[hash_num]);
+    unsigned int hash_num = hash_pjw(symbol->name) % HASH_TABLE_SIZE;
+    symbol_table.h_table[hash_num] = create_st_node(symbol, symbol_table.h_table[hash_num]);
+    env_layer_add_node(symbol_table.h_table[hash_num]);
 }
+
+
 
 
 void print_struct_type_table()
@@ -126,5 +169,24 @@ void print_struct_type_table()
     for(itor = struct_type_table.start; itor != NULL; itor = itor->next_node)
     {
         print_type(itor->type);
+    }
+}
+
+
+
+void print_env_layer(st_node_t *node_list)
+{
+    for(st_node_t *itor = node_list->next; itor != NULL; itor = itor->sibling)
+    {
+        print_symbol(itor->symbol);
+    }
+    printf("\n");
+}
+
+void print_symbol_table()
+{
+    for(env_layer_t *itor = symbol_table.env_stack_top; itor != NULL; itor = itor->next_layer)
+    {
+        print_env_layer(itor->env_node_list);
     }
 }

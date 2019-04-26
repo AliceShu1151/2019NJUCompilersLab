@@ -10,20 +10,17 @@ void init_type_list(type_list_t *type_list)
 }
 
 
-env_node_t *init_enviroment_stack()
+env_layer_t *init_enviroment_stack()
 {
-    env_node_t *rtn = malloc(sizeof(env_node_t));
-    rtn->env_symbol_list = NULL;
+    env_layer_t *rtn = malloc(sizeof(env_layer_t));
+    rtn->env_node_list = NULL;
     rtn->next_layer = NULL;
     return rtn;
 }
 
 void init_hash_table(st_node_t *h_table)
 {
-    for(size_t i = 0; i < HASH_TABLE_SIZE; i++)
-    {
-        h_table[i] = NULL;
-    }
+
 }
 
 
@@ -35,7 +32,7 @@ type_basic_t *create_type_basic(int type)
     return rtn;
 }
 
-type_array_t *create_array(int size, type_t *type)
+type_array_t *create_type_array(int size, type_t *type)
 {
     type_array_t *rtn = malloc(sizeof(type_array_t));
     rtn->type_kind = TYPE_ARRAY;
@@ -53,7 +50,7 @@ type_struct_t *create_type_struct(const char *name, field_list_t *field_list)
     return rtn;
 }
 
-type_func_t *create_type_func(type_t* rtn_type, field_list_t *param_list)
+type_func_t *create_type_func(type_t* rtn_type, type_list_t *param_list)
 {
     type_func_t *rtn = malloc(sizeof(type_func_t));
     rtn->type_kind = TYPE_FUNCTION;
@@ -88,21 +85,41 @@ field_list_t *create_field_list()
     return rtn; 
 }
 
+type_node_t *create_list_node(type_t *type)
+{
+    type_node_t *rtn = malloc(sizeof(type_node_t));
+    rtn->type = type;
+    return rtn;
+}
+
+void field_list_add_to_type_list(field_list_t *field_list, type_list_t *type_list)
+{
+    for(field_node_t *itor = field_list->start; itor != NULL; itor = itor->next)
+    {
+        type_node_t *type_node = create_list_node(itor->type);
+        if (type_list->start == NULL) 
+        {
+            type_list->start = type_node;
+        }
+        type_list->end->next_node = type_node;
+        type_list->end = type_node;
+        type_list->size++;
+    }
+}
+
 st_node_t *create_st_node(symbol_t *symbol, st_node_t *old_st_node)
 {
-    if (old_st_node->is_empty == EMPTY) 
+    st_node_t *rtn = malloc(sizeof(st_node_t));
+    rtn->symbol = symbol;
+    rtn->next = NULL;
+    rtn->prev = NULL;
+    rtn->sibling = NULL;
+    if (old_st_node != NULL) 
     {
-        old_st_node->symbol = symbol;
-        old_st_node->is_empty =NOT_EMPTY;   
-        return old_st_node;    
+        old_st_node->prev = rtn;
+        rtn->next = old_st_node;   
     }
-    else
-    {
-        st_node_t *rtn = malloc(sizeof(st_node_t));
-        
-    }
-    
-    
+    return rtn;
 }
 
 

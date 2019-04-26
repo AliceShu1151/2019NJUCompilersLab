@@ -76,10 +76,8 @@ typedef struct symbol
 
 
 // symbol_table
-enum{EMPTY, NOT_EMPTY};
 typedef struct symbol_table_node
 {
-    int is_empty;
     symbol_t *symbol;
     struct symbol_table_node *sibling;
     struct symbol_table_node *prev;
@@ -87,29 +85,29 @@ typedef struct symbol_table_node
 } st_node_t;
 
 // environment stack
-typedef struct environment_node
+typedef struct environment_layer
 {
-    st_node_t *env_symbol_list;
+    st_node_t *env_node_list;
     struct environment_node *next_layer;
-} env_node_t;
+} env_layer_t;
 
 // hash table
 #define HASH_TABLE_SIZE 1000
 typedef struct symbol_table
 {
-    env_node_t *env_stack_top;
+    env_layer_t *env_stack_top;
     st_node_t *h_table[HASH_TABLE_SIZE];
 } symbol_table_t;
 
 
 void init_type_list(type_list_t *type_list);
-env_node_t *init_enviroment_stack();
+env_layer_t *init_enviroment_stack();
 void init_hash_table(st_node_t *h_table);
 
 type_basic_t *create_type_basic(int type);
-type_array_t *create_array(int size, type_t *type);
+type_array_t *create_type_array(int size, type_t *type);
 type_struct_t *create_type_struct(const char *name, field_list_t *field_list);
-type_func_t *create_type_func(type_t* rtn_type, field_list_t *param_list);
+type_func_t *create_type_func(type_t* rtn_type, type_list_t *param_list);
 
 void init_symbol(symbol_t *symbol, const char *name, 
                         type_t *type, int lineno, int is_defined);
@@ -117,6 +115,8 @@ void init_symbol(symbol_t *symbol, const char *name,
 
 field_node_t *create_field_node(const char* name, type_t *type);
 field_list_t *create_field_list();
+
+void field_list_add_to_type_list(field_list_t *field_list, type_list_t *type_list);
 
 st_node_t *create_st_node(symbol_t *symbol, st_node_t *old_st_node);
 

@@ -12,7 +12,7 @@ void semantic_declist(TreeNode *node, type_t *type, field_list_t *field_list, in
 void semantic_dec(TreeNode *node, type_t *type, field_list_t *field_list, int where);
 void semantic_vardec(TreeNode *node, symbol_t *symbol, type_t *type);
 
-void semantic_fundec(TreeNode *node, type_t *type);
+void semantic_fundec(TreeNode *node, type_t *type, symbol_t *symbol);
 void semantic_varlist(TreeNode *node, field_list_t *field_list);
 void semantic_paramdec(TreeNode *node, field_list_t *field_list);
 
@@ -32,7 +32,8 @@ void semantic_analysis(TreeNode *root)
     init_struct_type_table();
     init_symbol_table();
     semantic_analysis_r(root);
-    print_struct_type_table();
+    //print_struct_type_table();
+    print_symbol_table();
     printf("fuck!\n");
 }
 
@@ -60,8 +61,12 @@ void semantic_extdef(TreeNode *node)
 {
     assert(strcmp(node->tokenname, "ExtDef") == 0);
     TreeNode *specifier = node->child;
-    
+    //printf("%d\n", node->lineno);
     type_t *type_specifier = semantic_specifier(specifier);
+    if (type_specifier == NULL) 
+    {
+        return;
+    }
 
     TreeNode *specifier_next = specifier->brother;
     if (strcmp(specifier_next->tokenname, "ExtDecList") == 0) 
@@ -74,7 +79,8 @@ void semantic_extdef(TreeNode *node)
     }
     else if (strcmp(specifier_next->tokenname, "FunDec") == 0)
     {
-        semantic_fundec(specifier_next, type_specifier);
+        symbol_t symbol;
+        semantic_fundec(specifier_next, type_specifier, &symbol);
     }
 }
 
@@ -105,7 +111,7 @@ type_t *semantic_structspecifier(TreeNode *node)
 {
     assert(strcmp(node->tokenname, "StructSpecifier") == 0);
     assert(strcmp(node->child->tokenname, "STRUCT") == 0);
-
+    //printf("Struct\n");
     TreeNode *struct_next = node->child->brother;
     type_t *specifier_struct;
 
@@ -120,7 +126,7 @@ type_t *semantic_structspecifier(TreeNode *node)
         else
         {
             semantic_deflist(struct_next->brother->brother, STRUCT_SPECIFIER, field_list);
-        }
+        } 
         specifier_struct = (type_t *)create_type_struct(struct_id->idname, field_list);
         struct_table_check_add((type_struct_t *)specifier_struct, struct_next->lineno);
         return specifier_struct;
@@ -138,7 +144,6 @@ void semantic_deflist(TreeNode *node, int where, field_list_t *field_list)
     assert(strcmp(node->tokenname, "DefList") == 0);
 
     TreeNode *deflist = node;
-
     while (deflist != NULL)
     {
         TreeNode *def = deflist->child;
@@ -148,7 +153,7 @@ void semantic_deflist(TreeNode *node, int where, field_list_t *field_list)
         {
             semantic_declist(def->child->brother, type_specifier, field_list, where);
         }
-        deflist = def->brother;      
+        deflist = def->brother;  
     }
 }
 
@@ -156,20 +161,20 @@ void semantic_declist(TreeNode *node, type_t *type, field_list_t *field_list, in
 {
     assert(strcmp(node->tokenname, "DecList") == 0);
 
+    //printf("DecList\n");
     TreeNode *declist = node;
     while (declist != NULL){
         TreeNode *dec = declist->child;
         semantic_dec(dec, type, field_list, where);
         if (dec->brother != NULL) 
         {
-            assert(strcmp(dec->brother->tokenname, "COMMA") ==0);
+            assert(strcmp(dec->brother->tokenname, "COMMA") == 0);
             declist = dec->brother->brother;
         }  
         else
         {
             declist = dec->brother;
         }
-
     }
 }
 
@@ -212,7 +217,7 @@ void semantic_vardec(TreeNode *node, symbol_t *symbol, type_t *type)
         else if (strcmp(node->child->brother->brother->tokenname, "INT") == 0)
         {
             int size = node->child->brother->brother->ival;
-            type_t *array_type = (type_t *)create_array(size, type);
+            type_t *array_type = (type_t *)create_type_array(size, type);
             semantic_vardec(node->child, symbol, array_type);           
         }
     }
@@ -224,52 +229,57 @@ void semantic_extdeclist(TreeNode *node, type_t *type)
     symbol_t symbol;
     semantic_vardec(node->child, &symbol, type);
     symbol_table_check_add(&symbol);
-    if (node->brother != NULL) 
+    print_symbol(&symbol);
+    if (node->child->brother != NULL) 
     {
-        semantic_extdeclist(node->brother->brother, type);
+        semantic_extdeclist(node->child->brother->brother, type);
     }
 }
 
-void semantic_fundec(TreeNode *node, type_t *type)
+void semantic_fundec(TreeNode *node, type_t *type, symbol_t *symbol)
 {
     assert(strcmp(node->tokenname, "FunDec") == 0);
     TreeNode *fundec_id = node->child;
-    symbol_t symbol;
-    
-    field_list_t *param_list = create_field_list();       
+    field_list_t *field_list = create_field_list();
+    type_list_t *param_list ;
+    init_type_list(param_list);       
     if (strcmp(fundec_id->brother->brother->tokenname, "RP") == 0)
     {
         param_list = NULL;
     }
     else
     {
-        semantic_varlist(fundec_id->brother->brother, param_list);
+        semantic_varlist(fundec_id->brother->brother, field_list);
     }
-    type_t *func_type = create_type_func(type, param_list);
-
-    type_t *type_func = create_type_func(type, param_list);
+    field_list_add_to_type_list(field_list, param_list);
+    type_t *type_func = (type_t *)create_type_func(type, param_list);
     init_symbol(&symbol, fundec_id->idname, type_func, fundec_id->lineno, NOT_DEFINED);
     symbol_table_check_add(&symbol);
 }
 
-void semantic_varlist(TreeNode *node, field_list_t *param_list)
+void semantic_varlist(TreeNode *node, field_list_t *field_list)
 {
     assert(strcmp(node->tokenname, "VarList") == 0);
-    semantic_paramdec(node->child, param_list);
+    semantic_paramdec(node->child, field_list);
     
     if (node->child->brother != NULL) 
     {
-        semantic_varlist(node->child->brother->brother, param_list);
+        semantic_varlist(node->child->brother->brother, field_list);
     }   
 }
 
-void semantic_paramdec(TreeNode *node, field_list_t *param_list)
+void semantic_paramdec(TreeNode *node, field_list_t *field_list)
 {
     assert(strcmp(node->tokenname, "ParamDec") == 0);
     type_t *type_specifier = semantic_specifier(node->child);
+    if (type_specifier == NULL) 
+    {
+        return;
+    }
+    
     symbol_t symbol;
     semantic_vardec(node->child, &symbol, type_specifier);
-    field_list_check_push_back(&symbol, param_list);
+    field_list_check_push_back(field_list, &symbol);
 }
 
 void symbol_table_check_add(symbol_t *symbol)

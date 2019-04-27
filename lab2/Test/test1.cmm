@@ -1,4 +1,37 @@
 int d,f;
 int a[2][3];
 
-struct {int x;}y;
+struct g{int x;} test_1;
+struct {int x;} test_2;
+
+struct x
+{
+	int a[2][3];
+};
+
+struct y
+{
+	int a;
+	float a;
+};
+
+struct z
+{
+	int a,b;
+	float c;
+};
+
+int func()
+{
+	int k, l;
+	{
+		int i, j;
+	}
+}
+
+int main(int m, int n) 
+{
+	int i = 0;
+	j = i + 1;
+}
+

@@ -93,7 +93,7 @@ void semantic_extdef(TreeNode *node)
             compst_env_init(symbol, field_list);
             semantic_compst(specifier_next->brother, symbol, type_specifier);
 
-            symbol_table_env_stack_pop();
+            //symbol_table_env_stack_pop();
         }
     }
 }
@@ -141,15 +141,8 @@ type_t *semantic_structspecifier(TreeNode *node)
             semantic_deflist(struct_next->brother->brother, STRUCT_SPECIFIER, field_list);
         }
         TreeNode *struct_id = struct_next->child;
-        if (struct_id == NULL) 
-        {
-            specifier_struct = (type_t *)create_type_struct(NULL, field_list);
-        }
-        else
-        {
-            specifier_struct = (type_t *)create_type_struct(struct_id->idname, field_list);
-            struct_table_check_add((type_struct_t *)specifier_struct, struct_next->lineno);
-        }
+        specifier_struct = (type_t *)create_type_struct(struct_id->idname, field_list);
+        struct_table_check_add((type_struct_t *)specifier_struct, struct_next->lineno);
         return specifier_struct;
     }
     else if (strcmp(struct_next->tokenname, "Tag") == 0)
@@ -160,6 +153,20 @@ type_t *semantic_structspecifier(TreeNode *node)
             print_semantic_error(17, node->lineno, struct_next->child->idname);
         }
         return (type_t *)specifier_struct;
+    }
+    else if (strcmp(struct_next->tokenname, "LC") == 0)
+    {
+        field_list_t *field_list = create_field_list();
+        if (strcmp(struct_next->brother->tokenname, "RC") == 0)
+        {
+            field_list = NULL;
+        }
+        else
+        {
+            semantic_deflist(struct_next->brother, STRUCT_SPECIFIER, field_list);
+        }
+        specifier_struct = (type_t *)create_type_struct(NULL, field_list);
+        return specifier_struct;
     }
 }
 void semantic_deflist(TreeNode *node, int where, field_list_t *field_list)
@@ -359,6 +366,7 @@ void symbol_table_check_add(symbol_t *symbol)
 
 void struct_table_check_add(type_struct_t *new_struct, int lineno)
 {
+    
     if (struct_table_find_name(new_struct->name) != NULL)
     {
         print_semantic_error(16, lineno, new_struct->name);

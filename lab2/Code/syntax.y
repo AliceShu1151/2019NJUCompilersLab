@@ -148,14 +148,14 @@ ParamDec:   Specifier VarDec {
             }
         ;
 /* Statements */
-CompSt  :   LC DefList StmList RC {   
+CompSt  :   LC DefList StmtList RC {   
                 $$ = Create_NonTermNode(@$.first_line, "CompSt");
                 Add_Children($$, 4, $1, $2, $3, $4);
             }
         |   LC error RC
         ;
-StmList :   Stmt StmList {   
-                $$ = Create_NonTermNode(@$.first_line, "StmList");
+StmtList :   Stmt StmtList {   
+                $$ = Create_NonTermNode(@$.first_line, "StmtList");
                 Add_Children($$, 2, $1, $2);
             }
         |   {

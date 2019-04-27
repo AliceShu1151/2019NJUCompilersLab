@@ -40,6 +40,8 @@ TreeNode *Create_IntTermNode(int lineno, const char *tokenname, int tokentype, i
 
 void Add_Children(TreeNode *parent_node, int bro_num,...);
 
+const char * Find_NonTermNode_Name(TreeNode *node);
+
 void Print_Tree(TreeNode *root);
 
 #endif

@@ -19,7 +19,22 @@ void semantic_paramdec(TreeNode *node, field_list_t *field_list);
 void semantic_compst(TreeNode *node, type_t *rtn_type);
 void semantic_stmtlist(TreeNode *node, type_t *rtn_type);
 void semantic_stmt(TreeNode *node, type_t *rtn_type);
-void semantic_exp(TreeNode *node, type_t *rtn_type);
+void semantic_args(TreeNode *node, type_list_t *type_list);
+type_t *exp_type_check_float(TreeNode *node, int *is_left_value);
+
+type_t *semantic_exp(TreeNode *node, int *is_left_value);
+type_t *exp_type_check_int(TreeNode *node, int *is_left_value);
+type_t *exp_type_check_float(TreeNode *node, int *is_left_value);
+type_t *exp_type_check_var(TreeNode *node, int *is_left_value);
+type_t *exp_type_check_func(TreeNode *node, TreeNode *args, int *is_left_value);
+type_t *exp_type_check_unary_minus(TreeNode *node, int *is_left_value);
+type_t *exp_type_check_unary_not(TreeNode *node, int *is_left_value);
+type_t *exp_type_check_struct_dot(TreeNode *exp, TreeNode *dot, TreeNode *id, int *is_left_value);
+type_t *exp_type_check_array(TreeNode *exp_1, TreeNode *exp_2, int *is_left_value);
+type_t *exp_type_check_assign(TreeNode *exp_1, TreeNode *exp_2, int *is_left_value);
+type_t *exp_type_check_binary_bit(TreeNode *exp_1, TreeNode *exp_2, int *is_left_value);
+type_t *exp_type_check_binary_relop(TreeNode *exp_1, TreeNode *exp_2, int *is_left_value);
+type_t *exp_type_check_binary_arith(TreeNode *exp_1, TreeNode *exp_2, int *is_left_value);
 
 void symbol_table_check_add(symbol_t *symbol);
 void symbol_table_check_add_func(symbol_t *symbol_func, int is_define);
@@ -232,7 +247,14 @@ void semantic_dec(TreeNode *node, type_t *type, field_list_t *field_list, int wh
         {
             print_semantic_error(15, node->lineno, symbol->name);
         }
-        //todo
+        if (where == STATEMENT)
+        {
+            type_t *type_exp = semantic_exp(assignop->brother, NULL);
+            if (type_is_equal(type, type_exp) == TYPE_NOT_EQUAL)
+            {
+                print_semantic_error(5, node->child->lineno);
+            }
+        }
     }
 }
 
@@ -341,22 +363,29 @@ void semantic_stmt(TreeNode *node, type_t *rtn_type)
 {
     assert(strcmp(node->tokenname, "Stmt") == 0);
     TreeNode *type_stmt = node->child;
+    int is_left_value;
     if (strcmp(type_stmt->tokenname, "Exp") == 0)
     {
-        semantic_exp(node->child, rtn_type);
+        semantic_exp(node->child, &is_left_value);
     }
     else if (strcmp(type_stmt->tokenname, "CompSt") == 0)
     {
+        symbol_table_env_stack_push();
         semantic_compst(node->child, rtn_type);
+        symbol_table_env_stack_pop();
     }
     else if (strcmp(type_stmt->tokenname, "RETURN") == 0)
     {
-        semantic_exp(type_stmt->brother, rtn_type);
+        type_t *rel_type = semantic_exp(type_stmt->brother, &is_left_value);
+        if (rel_type != NULL && type_is_equal(rtn_type, rel_type) == TYPE_NOT_EQUAL)
+        {
+            print_semantic_error(8, type_stmt->brother->lineno);
+        }
     }
     else if (strcmp(type_stmt->tokenname, "IF") == 0)
     {
         TreeNode *exp = type_stmt->brother->brother;
-        semantic_exp(exp, rtn_type);
+        semantic_exp(exp, NULL);
         TreeNode *stmt = exp->brother->brother;
         semantic_stmt(stmt, rtn_type);
         if (stmt->brother != NULL)
@@ -368,15 +397,328 @@ void semantic_stmt(TreeNode *node, type_t *rtn_type)
     else if (strcmp(type_stmt->tokenname, "WHILE") == 0)
     {
         TreeNode *exp = type_stmt->brother->brother;
-        semantic_exp(exp, rtn_type);
+        type_t *rtn_type = semantic_exp(exp, &is_left_value);
         TreeNode *stmt = exp->brother->brother;
         semantic_stmt(stmt, rtn_type);
     }
 }
 
-void semantic_exp(TreeNode *node, type_t *rtn_type)
+void semantic_args(TreeNode *node, type_list_t *type_list)
 {
+    if (node == NULL)
+    {
+        return;
+    }
+    assert(strcmp(node->tokenname, "Args") == 0);
+    TreeNode *exp = node->child;
 
+    type_t *type_exp = semantic_exp(exp, NULL);
+    if (type_exp == NULL)
+        return;
+    type_list_push_back(type_list, type_exp);
+    if (exp->brother != NULL)
+    {
+        semantic_args(exp->brother->brother, type_list);
+    }
+}
+
+type_t *semantic_exp(TreeNode *node, int *is_left_value)
+{
+    //printf("%d\n", node->lineno);
+    TreeNode *child_1 = node->child;
+    TreeNode *child_2, *child_3;
+    assert(strcmp(node->tokenname, "Exp") == 0);
+    if (strcmp(child_1->tokenname, "INT") == 0)
+        return exp_type_check_int(child_1, is_left_value);
+    else if (strcmp(child_1->tokenname, "FLOAT") == 0)
+        return exp_type_check_float(child_1, is_left_value);
+    else if (strcmp(child_1->tokenname, "ID") == 0)
+    {
+        if (child_1->brother == NULL)
+            return exp_type_check_var(child_1, is_left_value);
+        child_3 = child_1->brother->brother;
+        if ((strcmp(child_3->tokenname, "RP") == 0))
+            return exp_type_check_func(child_1, NULL, is_left_value);
+        else if ((strcmp(child_3->tokenname, "Args") == 0))
+            return exp_type_check_func(child_1, child_3, is_left_value);
+    }
+    else if (strcmp(child_1->tokenname, "LP") == 0)
+        return semantic_exp(child_1->brother, is_left_value);
+    else if (strcmp(child_1->tokenname, "MINUS") == 0)
+        return exp_type_check_unary_minus(child_1, is_left_value);
+    else if (strcmp(child_1->tokenname, "NOT") == 0)
+        return exp_type_check_unary_not(child_1, is_left_value);
+    else if (strcmp(child_1->tokenname, "Exp") == 0)
+    {
+        child_2 = child_1->brother;
+        child_3 = child_2->brother;
+        if (strcmp(child_2->tokenname, "DOT") == 0)
+            return exp_type_check_struct_dot(child_1, child_2, child_3, is_left_value);
+        else if (strcmp(child_2->tokenname, "LB") == 0)
+            return exp_type_check_array(child_1, child_3, is_left_value);
+        else if (strcmp(child_2->tokenname, "ASSIGNOP") == 0)
+            return exp_type_check_assign(child_1, child_3, is_left_value);
+        else if (strcmp(child_2->tokenname, "AND") == 0 || strcmp(child_2->tokenname, "OR") == 0)
+            return exp_type_check_binary_bit(child_1, child_3, is_left_value);
+        else if (strcmp(child_2->tokenname, "RELOP") == 0)
+            return exp_type_check_binary_relop(child_1, child_3, is_left_value);
+        else if (strcmp(child_2->tokenname, "PLUS") == 0 || strcmp(child_2->tokenname, "MINUS") == 0 ||
+                 strcmp(child_2->tokenname, "STAR") == 0 || strcmp(child_2->tokenname, "DIV") == 0)
+            return exp_type_check_binary_arith(child_1, child_3, is_left_value);
+    }
+    return NULL;
+}
+
+type_t *exp_type_check_int(TreeNode *node, int *is_left_value)
+{
+    assert(strcmp(node->tokenname, "INT") == 0);
+    if (is_left_value == NULL)
+    {
+        *is_left_value = 0;
+    }
+    return (type_t *)create_type_basic(TYPE_BASIC_INT);
+}
+
+type_t *exp_type_check_float(TreeNode *node, int *is_left_value)
+{
+    assert(strcmp(node->tokenname, "FLOAT") == 0);
+    if (is_left_value == NULL)
+    {
+        *is_left_value = 0;
+    }
+    return (type_t *)create_type_basic(TYPE_BASIC_FLOAT);
+}
+
+type_t *exp_type_check_var(TreeNode *node, int *is_left_value)
+{
+    assert(strcmp(node->tokenname, "ID") == 0);
+    if (is_left_value == NULL)
+    {
+        *is_left_value = 1;
+    }
+    symbol_t *symbol = symbol_table_find_name(node->idname);
+    if (symbol == NULL)
+    {
+        print_semantic_error(1, node->lineno, node->idname);
+        return NULL;
+    }
+    return symbol->type;
+}
+
+type_t *exp_type_check_func(TreeNode *node, TreeNode *args, int *is_left_value)
+{
+    assert(strcmp(node->tokenname, "ID") == 0);
+    if (is_left_value == NULL)
+    {
+        *is_left_value = 0;
+    }
+    symbol_t *symbol = symbol_table_find_name(node->idname);
+    if (symbol == NULL)
+    {
+        print_semantic_error(11, node->lineno, node->idname);
+        return NULL;
+    }
+    type_func_t *type_func = (type_func_t *)symbol->type;
+    type_list_t *arg_type_list = create_type_list();
+    semantic_args(args, arg_type_list);
+    if (type_type_list_is_equal(type_func->parameters, arg_type_list) == TYPE_NOT_EQUAL)
+    {
+        printf("Error type %d at Line %d: Function \"%s(", 9, node->lineno, symbol->name);
+        print_type_list(arg_type_list);
+        printf(")\" is not applicable for arguments \"(");
+        print_type_list(type_func->parameters);
+        printf(")\".");
+    }
+    return type_func->return_type;
+}
+
+type_t *exp_type_check_unary_minus(TreeNode *node, int *is_left_value)
+{
+    assert(strcmp(node->tokenname, "MINUS") == 0);
+    if (is_left_value == NULL)
+    {
+        *is_left_value = 0;
+    }
+    type_t *type_exp = semantic_exp(node->brother, is_left_value);
+    if (type_exp == NULL)
+    {
+        return NULL;
+    }
+    if (type_exp->type_kind != TYPE_BASIC)
+    {
+        print_semantic_error(7, node->child->lineno);
+    }
+    return type_exp;
+}
+
+type_t *exp_type_check_unary_not(TreeNode *node, int *is_left_value)
+{
+    assert(strcmp(node->tokenname, "MINUS") == 0);
+    if (is_left_value == NULL)
+    {
+        *is_left_value = 0;
+    }
+    type_t *type_exp = semantic_exp(node->brother, is_left_value);
+    if (type_exp == NULL)
+    {
+        return NULL;
+    }
+    if (!type_is_int(type_exp))
+    {
+        print_semantic_error(7, node->child->lineno);
+    }
+    return type_exp;
+}
+
+type_t *exp_type_check_struct_dot(TreeNode *exp, TreeNode *dot, TreeNode *id, int *is_left_value)
+{
+    assert(strcmp(dot->tokenname, "DOT") == 0);
+    if (is_left_value == NULL)
+    {
+        *is_left_value = 1;
+    }
+    type_t *type_exp = semantic_exp(exp, is_left_value);
+    if (type_exp == NULL)
+    {
+        return NULL;
+    }
+
+    if (type_exp->type_kind != TYPE_STRUCT)
+    {
+        print_semantic_error(13, dot->lineno);
+    }
+    field_node_t *field_node = field_list_find_name(((type_struct_t *)type_exp)->struct_fields, id->idname);
+    if (field_node == NULL)
+    {
+        print_semantic_error(14, exp->lineno, id->idname);
+        return NULL;
+    }
+    return field_node->type;
+}
+
+type_t *exp_type_check_array(TreeNode *exp_1, TreeNode *exp_2, int *is_left_value)
+{
+    if (is_left_value == NULL)
+    {
+        *is_left_value = 1;
+    }
+    type_t *type_1 = semantic_exp(exp_1, is_left_value);
+    type_t *type_2 = semantic_exp(exp_2, is_left_value);
+    if (type_1 != NULL && type_1->type_kind != TYPE_ARRAY)
+    {
+        const char *exp_name = Find_NonTermNode_Name(exp_1);
+        print_semantic_error(10, exp_1->lineno, exp_name);
+    }
+    if (type_2 != NULL && !type_is_int(type_2))
+    {
+        print_semantic_error(12, exp_2->lineno, exp_2->fval);
+    }
+    if (type_1 != NULL)
+    {
+        return type_1;
+    }
+    return NULL;
+}
+
+type_t *exp_type_check_assign(TreeNode *exp_1, TreeNode *exp_2, int *is_left_value)
+{
+    if (is_left_value == NULL)
+    {
+        *is_left_value = 0;
+    }
+    int type_1_is_left_value;
+    type_t *type_1 = semantic_exp(exp_1, &type_1_is_left_value);
+    type_t *type_2 = semantic_exp(exp_2, NULL);
+    if (type_1 != NULL && !type_1_is_left_value)
+    {
+        print_semantic_error(4, exp_1->lineno);
+        return NULL;
+    }
+    if (type_1 == NULL || type_2 == NULL)
+    {
+        return NULL;
+    }
+    if (type_is_equal(type_1, type_2) == TYPE_NOT_EQUAL)
+    {
+        print_semantic_error(5, exp_1->lineno);
+        return NULL;
+    }
+    return type_1;
+}
+
+type_t *exp_type_check_binary_bit(TreeNode *exp_1, TreeNode *exp_2, int *is_left_value)
+{
+    if (is_left_value == NULL)
+    {
+        *is_left_value = 0;
+    }
+    type_t *type_1 = semantic_exp(exp_1, NULL);
+    type_t *type_2 = semantic_exp(exp_2, NULL);
+    if (type_1 == NULL || type_2 == NULL)
+    {
+        return NULL;
+    }
+    if (type_is_equal(type_1, type_2) == TYPE_NOT_EQUAL)
+    {
+        print_semantic_error(7, exp_1->lineno);
+        return NULL;
+    }
+    if (!type_is_int(type_1))
+    {
+        print_semantic_error(7, exp_1->lineno);
+        return NULL;
+    }
+    return type_1;
+}
+
+type_t *exp_type_check_binary_relop(TreeNode *exp_1, TreeNode *exp_2, int *is_left_value)
+{
+    if (is_left_value == NULL)
+    {
+        *is_left_value = 0;
+    }
+    type_t *type_1 = semantic_exp(exp_1, NULL);
+    type_t *type_2 = semantic_exp(exp_2, NULL);
+    if (type_1 == NULL || type_2 == NULL)
+    {
+        return NULL;
+    }
+    if (type_is_equal(type_1, type_2) == TYPE_NOT_EQUAL)
+    {
+        print_semantic_error(7, exp_1->lineno);
+        return NULL;
+    }
+    if (type_1->type_kind != TYPE_BASIC)
+    {
+        print_semantic_error(7, exp_1->lineno);
+        return NULL;
+    }
+    return (type_t *)create_type_basic(TYPE_BASIC_INT);
+}
+
+type_t *exp_type_check_binary_arith(TreeNode *exp_1, TreeNode *exp_2, int *is_left_value)
+{
+    if (is_left_value == NULL)
+    {
+        *is_left_value = 0;
+    }
+    type_t *type_1 = semantic_exp(exp_1, NULL);
+    type_t *type_2 = semantic_exp(exp_2, NULL);
+    if (type_1 == NULL || type_2 == NULL)
+    {
+        return NULL;
+    }
+    if (type_is_equal(type_1, type_2) == TYPE_NOT_EQUAL)
+    {
+        print_semantic_error(7, exp_1->lineno);
+        return NULL;
+    }
+    if (type_1->type_kind != TYPE_BASIC)
+    {
+        print_semantic_error(7, exp_1->lineno);
+        return NULL;
+    }
+    return type_1;
 }
 
 void compst_env_init(symbol_t *symbol, field_list_t *param_list)
@@ -386,7 +728,11 @@ void compst_env_init(symbol_t *symbol, field_list_t *param_list)
 
 void symbol_table_check_add(symbol_t *symbol)
 {
-    if (symbol_table_find_name(symbol->name) != NULL)
+    if (struct_table_find_name(symbol->name))
+    {
+        print_semantic_error(3, symbol->lineno, symbol->name);
+    }
+    if (top_env_layer_find_name(symbol->name) != NULL)
     {
         print_semantic_error(3, symbol->lineno, symbol->name);
     }
@@ -431,7 +777,7 @@ void symbol_table_check_add_func(symbol_t *symbol_func, int is_define)
 void struct_table_check_add(type_struct_t *new_struct, int lineno)
 {
 
-    if (struct_table_find_name(new_struct->name) != NULL)
+    if (top_env_layer_find_name(new_struct->name) != NULL)
     {
         print_semantic_error(16, lineno, new_struct->name);
     }

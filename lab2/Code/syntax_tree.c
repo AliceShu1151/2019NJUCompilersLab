@@ -109,6 +109,23 @@ void Add_Children(TreeNode *parent_node, int bro_num,...)
     va_end(valist);
 }
 
+const char *Find_NonTermNode_Name(TreeNode *node)
+{
+    if (node == NULL) {
+        return NULL;
+    }
+    
+    TreeNode *itor;
+    for(itor = node->child; itor != NULL; itor = itor->brother)
+    {
+        if (strcmp(itor->tokenname, "ID") == 0) 
+        {
+            return itor->idname;
+        }
+    }
+    return Find_NonTermNode_Name(node->child);
+}
+
 
 void print_children(TreeNode *root, int depth) 
 {

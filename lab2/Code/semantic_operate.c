@@ -16,7 +16,7 @@ static char *error_msg[20] = {
     "Function \"%s\" is not applicable for arguments \"%s\".\n",
     "\"%s\" is not an array.\n",
     "\"%s\" is not a function.\n",
-    "\"%s\" is not an integer.\n",
+    "\"%f\" is not an integer.\n",
     "Illegal use of \".\".\n",
     "Non-existent field \"%s\".\n",
     "Redefined field \"%s\" or Field assigned during definition.\n",
@@ -55,20 +55,7 @@ int type_struct_equal(type_struct_t *struct_type, const char *struct_name)
     return 0;
 }
 
-void field_list_push_back(field_list_t *field_list, type_t *type, const char *name, int lineno)
-{
-    field_node_t *field_node = create_field_node(name, type, lineno);
-    if (field_list->start == NULL)
-    {
-        field_list->start = field_node;
-    }
-    else
-    {
-        field_list->end->next = field_node;
-    }
-    field_list->size = field_list->size + 1;
-    field_list->end = field_node;
-}
+
 
 void struct_table_push_back(type_struct_t *new_struct)
 {

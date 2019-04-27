@@ -16,7 +16,6 @@ void print_struct_type_table();
 void print_env_layer(st_node_t *node_list);
 void print_symbol_table();
 
-void field_list_push_back(field_list_t *field_list, type_t *type, const char *name, int lineno);
 
 void struct_table_push_back(type_struct_t *new_struct);
 type_t *struct_table_find_name(const char *struct_name);

@@ -115,9 +115,14 @@ symbol_t *create_symbol();
 
 field_node_t *create_field_node(const char* name, type_t *type, int lineno);
 field_list_t *create_field_list();
-type_node_t *create_list_node(type_t *type);
+type_node_t *create_type_node(type_t *type);
 type_list_t *create_type_list();
+
+type_list_t *type_list_push_back(type_list_t *type_list, type_t *type);
+
+void field_list_push_back(field_list_t *field_list, type_t *type, const char *name, int lineno);
 void field_list_add_to_type_list(field_list_t *field_list, type_list_t *type_list);
+field_node_t *field_list_find_name(field_list_t *struct_fields, const char *name);
 
 st_node_t *create_st_node(symbol_t *symbol, st_node_t *old_st_node);
 env_layer_t *create_env_layer();
@@ -132,6 +137,8 @@ int type_struct_is_equal(type_struct_t *type_1, type_struct_t *type_2);
 int type_func_is_equal(type_func_t *type_1, type_func_t *type_2);
 int type_type_list_is_equal(type_list_t *type_1, type_list_t *type_2);
 int type_field_list_is_equal(field_list_t *type_1, field_list_t *type_2);
+
+int type_is_int(type_t *type);
 
 void print_field_list(field_list_t *field_list);
 void print_type_list(type_list_t *type_list);

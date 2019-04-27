@@ -85,7 +85,7 @@ symbol_t *create_symbol()
     return rtn;
 }
 
-type_node_t *create_list_node(type_t *type)
+type_node_t *create_type_node(type_t *type)
 {
     type_node_t *rtn = malloc(sizeof(type_node_t));
     rtn->type = type;
@@ -101,11 +101,41 @@ type_list_t *create_type_list()
     return rtn;
 }
 
+type_list_t *type_list_push_back(type_list_t *type_list, type_t *type)
+{
+    type_node_t *type_node = create_type_node(type);
+    if (type_list->start == NULL)
+    {
+        type_list->start = type_node;
+    }
+    else
+    {
+        type_list->end->next_node = type_node;
+    }
+    type_list->size = type_list->size + 1;
+    type_list->end = type_node;
+}
+
+void field_list_push_back(field_list_t *field_list, type_t *type, const char *name, int lineno)
+{
+    field_node_t *field_node = create_field_node(name, type, lineno);
+    if (field_list->start == NULL)
+    {
+        field_list->start = field_node;
+    }
+    else
+    {
+        field_list->end->next = field_node;
+    }
+    field_list->size = field_list->size + 1;
+    field_list->end = field_node;
+}
+
 void field_list_add_to_type_list(field_list_t *field_list, type_list_t *type_list)
 {
     for (field_node_t *itor = field_list->start; itor != NULL; itor = itor->next)
     {
-        type_node_t *type_node = create_list_node(itor->type);
+        type_node_t *type_node = create_type_node(itor->type);
         if (type_list->size == 0)
         {
             type_list->start = type_node;
@@ -117,6 +147,19 @@ void field_list_add_to_type_list(field_list_t *field_list, type_list_t *type_lis
         type_list->end = type_node;
         type_list->size++;
     }
+}
+
+field_node_t *field_list_find_name(field_list_t *struct_fields, const char *name)
+{
+    field_node_t *itor;
+    for (itor = struct_fields->start; itor != NULL; itor = itor->next)
+    {
+        if (strcmp(itor->name, name) == 0)
+        {
+            return itor;
+        }
+    }
+    return NULL;
 }
 
 st_node_t *create_st_node(symbol_t *symbol, st_node_t *old_st_node)
@@ -249,6 +292,18 @@ int type_field_list_is_equal(field_list_t *type_1, field_list_t *type_2)
     return TYPE_EQUAL;
 }
 
+int type_is_int(type_t *type)
+{
+    if (type->type_kind == TYPE_BASIC)
+    {
+        if (((type_basic_t *)type)->int_or_float == TYPE_BASIC_INT)
+        {
+            return 1;
+        }
+    }
+    return 0;
+}
+
 void print_field_list(field_list_t *field_list)
 {
     if (field_list == NULL)
@@ -267,7 +322,7 @@ void print_field_list(field_list_t *field_list)
 void print_type_list(type_list_t *type_list)
 {
     type_node_t *itor;
-    for(itor = type_list->start; itor != NULL; itor = itor->next_node)
+    for (itor = type_list->start; itor != NULL; itor = itor->next_node)
     {
         print_type(itor->type);
     }

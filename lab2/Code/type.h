@@ -134,6 +134,8 @@ int type_type_list_is_equal(type_list_t *type_1, type_list_t *type_2);
 int type_field_list_is_equal(field_list_t *type_1, field_list_t *type_2);
 
 void print_field_list(field_list_t *field_list);
+void print_type_list(type_list_t *type_list);
+
 void print_type_basic(type_basic_t *type);
 void print_type_array(type_array_t *type);
 void print_type_struct(type_struct_t *type);

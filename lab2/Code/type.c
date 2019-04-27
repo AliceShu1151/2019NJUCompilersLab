@@ -179,6 +179,7 @@ int type_is_equal(type_t *type_1, type_t *type_2)
     {
         return type_func_is_equal((type_func_t *)type_1, (type_func_t *)type_2);
     }
+    return TYPE_NOT_EQUAL;
 }
 
 int type_basic_is_equal(type_basic_t *type_1, type_basic_t *type_2)
@@ -261,6 +262,16 @@ void print_field_list(field_list_t *field_list)
         print_type(itor->type);
         printf("\n");
     }
+}
+
+void print_type_list(type_list_t *type_list)
+{
+    type_node_t *itor;
+    for(itor = type_list->start; itor != NULL; itor = itor->next_node)
+    {
+        print_type(itor->type);
+    }
+    printf("\n");
 }
 
 void print_type_basic(type_basic_t *type)

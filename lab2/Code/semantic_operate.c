@@ -172,12 +172,10 @@ void print_struct_type_table()
 
 void print_env_layer(st_node_t *node_list)
 {
-    for(st_node_t *itor = node_list->next; itor != NULL; itor = itor->sibling)
+    for(st_node_t *itor = node_list; itor != NULL; itor = itor->sibling)
     {
-    printf("1\n");
         print_symbol(itor->symbol);
     }
-    printf("\n");
 }
 
 void print_symbol_table()

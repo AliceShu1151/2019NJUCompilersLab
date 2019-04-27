@@ -30,7 +30,7 @@ void semantic_analysis(TreeNode *root)
     init_struct_type_table();
     init_symbol_table();
     semantic_analysis_r(root);
-    //print_struct_type_table();
+    print_struct_type_table();
     print_symbol_table();
     printf("fuck!\n");
 }
@@ -77,7 +77,6 @@ void semantic_extdef(TreeNode *node)
     {
         symbol_t *symbol = create_symbol();
         semantic_fundec(specifier_next, type_specifier, symbol);
-        printf("2\n");
     }
 }
 
@@ -234,7 +233,6 @@ void semantic_extdeclist(TreeNode *node, type_t *type)
     symbol_t *symbol = create_symbol();
     semantic_vardec(node->child, symbol, type);
     symbol_table_check_add(symbol);
-    print_symbol(symbol);
     if (node->child->brother != NULL)
     {
         semantic_extdeclist(node->child->brother->brother, type);
@@ -246,8 +244,7 @@ void semantic_fundec(TreeNode *node, type_t *type, symbol_t *symbol)
     assert(strcmp(node->tokenname, "FunDec") == 0);
     TreeNode *fundec_id = node->child;
     field_list_t *field_list = create_field_list();
-    type_list_t *param_list;
-    init_type_list(param_list);
+    type_list_t *param_list = create_type_list();
     if (strcmp(fundec_id->brother->brother->tokenname, "RP") == 0)
     {
         param_list = NULL;
@@ -255,12 +252,11 @@ void semantic_fundec(TreeNode *node, type_t *type, symbol_t *symbol)
     else
     {
         semantic_varlist(fundec_id->brother->brother, field_list);
+        field_list_add_to_type_list(field_list, param_list);
     }
-    field_list_add_to_type_list(field_list, param_list);
     type_t *type_func = (type_t *)create_type_func(type, param_list);
     init_symbol(symbol, fundec_id->idname, type_func, fundec_id->lineno, NOT_DEFINED);
     symbol_table_check_add(symbol);
-    printf("1\n");
 }
 
 void semantic_varlist(TreeNode *node, field_list_t *field_list)
@@ -295,7 +291,7 @@ void symbol_table_check_add(symbol_t *symbol)
         print_semantic_error(3, symbol->lineno, symbol->name);
     }
     else
-    {
+    {   
         symbol_table_add(symbol);
     }
 }

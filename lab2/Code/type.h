@@ -116,6 +116,9 @@ symbol_t *create_symbol();
 field_node_t *create_field_node(const char* name, type_t *type);
 field_list_t *create_field_list();
 
+type_node_t *create_list_node(type_t *type);
+type_list_t *create_type_list();
+
 void field_list_add_to_type_list(field_list_t *field_list, type_list_t *type_list);
 
 st_node_t *create_st_node(symbol_t *symbol, st_node_t *old_st_node);

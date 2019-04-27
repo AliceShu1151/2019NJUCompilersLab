@@ -101,16 +101,28 @@ type_node_t *create_list_node(type_t *type)
     return rtn;
 }
 
+type_list_t *create_type_list()
+{
+    type_list_t *rtn = malloc(sizeof(type_list_t));
+    rtn->size = 0;
+    rtn->start = NULL;
+    rtn->end = NULL;
+    return rtn;
+}
+
 void field_list_add_to_type_list(field_list_t *field_list, type_list_t *type_list)
 {
     for(field_node_t *itor = field_list->start; itor != NULL; itor = itor->next)
     {
         type_node_t *type_node = create_list_node(itor->type);
-        if (type_list->start == NULL) 
+        if (type_list->size == 0) 
         {
             type_list->start = type_node;
         }
-        type_list->end->next_node = type_node;
+        else
+        {
+            type_list->end->next_node = type_node;
+        }
         type_list->end = type_node;
         type_list->size++;
     }

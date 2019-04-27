@@ -10,15 +10,6 @@ void init_type_list(type_list_t *type_list)
     type_list->end = NULL;
 }
 
-
-env_layer_t *init_enviroment_stack()
-{
-    env_layer_t *rtn = malloc(sizeof(env_layer_t));
-    rtn->env_node_list = NULL;
-    rtn->next_layer = NULL;
-    return rtn;
-}
-
 void init_hash_table(st_node_t **h_table)
 {
     memset(h_table, 0, sizeof(st_node_t *)*HASH_TABLE_SIZE);
@@ -68,10 +59,11 @@ void init_symbol(symbol_t *symbol, const char *name, type_t *type, int lineno, i
     symbol->is_defined = is_defined;
 }
 
-field_node_t *create_field_node(const char* name, type_t *type)
+field_node_t *create_field_node(const char* name, type_t *type, int lineno)
 {
     field_node_t *rtn = malloc(sizeof(field_node_t));
     rtn->name = name;
+    rtn->lineno = lineno;
     rtn->type = type;
     rtn->next = NULL;
     return rtn;
@@ -143,6 +135,13 @@ st_node_t *create_st_node(symbol_t *symbol, st_node_t *old_st_node)
     return rtn;
 }
 
+env_layer_t *create_env_layer()
+{
+    env_layer_t *rtn = malloc(sizeof(env_layer_t));
+    rtn->env_node_list = NULL;
+    rtn->next_layer = NULL;
+    return rtn;
+}
 
 unsigned int hash_pjw(const char *name)
 {

@@ -12,11 +12,16 @@ void semantic_declist(TreeNode *node, type_t *type, field_list_t *field_list, in
 void semantic_dec(TreeNode *node, type_t *type, field_list_t *field_list, int where);
 void semantic_vardec(TreeNode *node, symbol_t *symbol, type_t *type);
 
-void semantic_fundec(TreeNode *node, type_t *type, symbol_t *symbol);
+void semantic_fundec(TreeNode *node, type_t *type, symbol_t *symbol, field_list_t *field_list);
 void semantic_varlist(TreeNode *node, field_list_t *field_list);
 void semantic_paramdec(TreeNode *node, field_list_t *field_list);
 
+void semantic_compst(TreeNode *node, symbol_t *symbol, type_t *rtn_type);
+void semantic_stmtlist(TreeNode *node, type_t *rtn_type);
+
 void symbol_table_check_add(symbol_t *symbol);
+
+void compst_env_init(symbol_t *symbol, field_list_t *param_list);
 
 void struct_table_check_add(type_struct_t *new_struct, int lineno);
 
@@ -30,7 +35,7 @@ void semantic_analysis(TreeNode *root)
     init_struct_type_table();
     init_symbol_table();
     semantic_analysis_r(root);
-    print_struct_type_table();
+    //print_struct_type_table();
     print_symbol_table();
     printf("fuck!\n");
 }
@@ -76,7 +81,20 @@ void semantic_extdef(TreeNode *node)
     else if (strcmp(specifier_next->tokenname, "FunDec") == 0)
     {
         symbol_t *symbol = create_symbol();
-        semantic_fundec(specifier_next, type_specifier, symbol);
+        field_list_t *field_list = create_field_list();
+        semantic_fundec(specifier_next, type_specifier, symbol, field_list);
+        if (strcmp(specifier_next->brother->tokenname, "SEMI") == 0)
+        {
+            return;
+        }
+        else if (strcmp(specifier_next->brother->tokenname, "CompSt") == 0)
+        {
+            symbol_table_env_stack_push();
+            compst_env_init(symbol, field_list);
+            semantic_compst(specifier_next->brother, symbol, type_specifier);
+
+            symbol_table_env_stack_pop();
+        }
     }
 }
 
@@ -113,8 +131,6 @@ type_t *semantic_structspecifier(TreeNode *node)
 
     if (strcmp(struct_next->tokenname, "OptTag") == 0)
     {
-        TreeNode *struct_id = struct_next->child;
-        assert(strcmp(struct_id->tokenname, "ID") == 0);
         field_list_t *field_list = create_field_list();
         if (strcmp(struct_next->brother->brother->tokenname, "RC") == 0)
         {
@@ -124,8 +140,16 @@ type_t *semantic_structspecifier(TreeNode *node)
         {
             semantic_deflist(struct_next->brother->brother, STRUCT_SPECIFIER, field_list);
         }
-        specifier_struct = (type_t *)create_type_struct(struct_id->idname, field_list);
-        struct_table_check_add((type_struct_t *)specifier_struct, struct_next->lineno);
+        TreeNode *struct_id = struct_next->child;
+        if (struct_id == NULL) 
+        {
+            specifier_struct = (type_t *)create_type_struct(NULL, field_list);
+        }
+        else
+        {
+            specifier_struct = (type_t *)create_type_struct(struct_id->idname, field_list);
+            struct_table_check_add((type_struct_t *)specifier_struct, struct_next->lineno);
+        }
         return specifier_struct;
     }
     else if (strcmp(struct_next->tokenname, "Tag") == 0)
@@ -199,7 +223,10 @@ void semantic_dec(TreeNode *node, type_t *type, field_list_t *field_list, int wh
     }
     if (strcmp(assignop->tokenname, "ASSIGNOP") == 0)
     {
-        print_semantic_error(15, node->lineno, node->tokenname);
+        if (where == STRUCT_SPECIFIER)
+        {
+            print_semantic_error(15, node->lineno, node->tokenname);
+        }
     }
 }
 
@@ -239,11 +266,10 @@ void semantic_extdeclist(TreeNode *node, type_t *type)
     }
 }
 
-void semantic_fundec(TreeNode *node, type_t *type, symbol_t *symbol)
+void semantic_fundec(TreeNode *node, type_t *type, symbol_t *symbol, field_list_t *field_list)
 {
     assert(strcmp(node->tokenname, "FunDec") == 0);
     TreeNode *fundec_id = node->child;
-    field_list_t *field_list = create_field_list();
     type_list_t *param_list = create_type_list();
     if (strcmp(fundec_id->brother->brother->tokenname, "RP") == 0)
     {
@@ -280,18 +306,53 @@ void semantic_paramdec(TreeNode *node, field_list_t *field_list)
     }
 
     symbol_t symbol;
-    semantic_vardec(node->child, &symbol, type_specifier);
+    semantic_vardec(node->child->brother, &symbol, type_specifier);
     field_list_check_push_back(field_list, &symbol);
+}
+
+void semantic_compst(TreeNode *node, symbol_t *symbol, type_t *rtn_type)
+{
+    assert(strcmp(node->tokenname, "CompSt") == 0);
+    TreeNode *next = node->child->brother;
+    if (strcmp(next->tokenname, "DefList") == 0)
+    {
+        field_list_t *field_list = create_field_list();
+        semantic_deflist(next, STATEMENT, field_list);
+        next = next->brother;
+    }
+    if (strcmp(next->tokenname, "StmtList") == 0)
+    {
+        semantic_stmtlist(next, rtn_type);
+    }
+}
+
+
+void semantic_stmtlist(TreeNode *node, type_t *rtn_type)
+{
+
+}
+
+void compst_env_init(symbol_t *symbol, field_list_t *param_list)
+{
+    symbol_t *find_in_table = symbol_table_find_name(symbol->name);
+    if (find_in_table != NULL)
+    {
+        if (find_in_table->is_defined == DEFINED)
+        {
+            print_semantic_error(4, symbol->lineno, symbol->name);
+        }
+    }
+    param_list_add_env_layer(param_list);
 }
 
 void symbol_table_check_add(symbol_t *symbol)
 {
-    if (symbol_table_find_name(symbol) != NULL)
+    if (symbol_table_find_name(symbol->name) != NULL)
     {
         print_semantic_error(3, symbol->lineno, symbol->name);
     }
     else
-    {   
+    {
         symbol_table_add(symbol);
     }
 }
@@ -315,9 +376,9 @@ void field_list_check_push_back(field_list_t *field_list, symbol_t *symbol)
     {
         if (strcmp(itor->name, symbol->name) == 0)
         {
-            print_semantic_error(15, symbol->lineno, symbol->name);
+            print_semantic_error(15, itor->lineno, symbol->name);
             return;
         }
     }
-    field_list_push_back(field_list, symbol->type, symbol->name);
+    field_list_push_back(field_list, symbol->type, symbol->name, symbol->lineno);
 }

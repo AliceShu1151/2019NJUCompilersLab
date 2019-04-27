@@ -10,6 +10,7 @@ typedef struct field_node
 {
     type_t *type;
     const char *name;
+    int lineno;
     struct field_node *next;
 } field_node_t;
 
@@ -101,7 +102,6 @@ typedef struct symbol_table
 
 
 void init_type_list(type_list_t *type_list);
-env_layer_t *init_enviroment_stack();
 void init_hash_table(st_node_t **h_table);
 
 type_basic_t *create_type_basic(int type);
@@ -113,15 +113,14 @@ void init_symbol(symbol_t *symbol, const char *name,
                         type_t *type, int lineno, int is_defined);
 symbol_t *create_symbol();
 
-field_node_t *create_field_node(const char* name, type_t *type);
+field_node_t *create_field_node(const char* name, type_t *type, int lineno);
 field_list_t *create_field_list();
-
 type_node_t *create_list_node(type_t *type);
 type_list_t *create_type_list();
-
 void field_list_add_to_type_list(field_list_t *field_list, type_list_t *type_list);
 
 st_node_t *create_st_node(symbol_t *symbol, st_node_t *old_st_node);
+env_layer_t *create_env_layer();
 
 unsigned int hash_pjw(const char *name);
 

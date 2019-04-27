@@ -66,7 +66,7 @@ typedef struct type_func
 
 
 // symbol
-enum{DEFINED, NOT_DEFINED};
+enum{NOT_DEFINED, DEFINED};
 typedef struct symbol
 {
     type_t *type;
@@ -123,6 +123,15 @@ st_node_t *create_st_node(symbol_t *symbol, st_node_t *old_st_node);
 env_layer_t *create_env_layer();
 
 unsigned int hash_pjw(const char *name);
+
+enum {TYPE_EQUAL, TYPE_NOT_EQUAL};
+int type_is_equal(type_t *type_1, type_t *type_2);
+int type_basic_is_equal(type_basic_t *type_1, type_basic_t *type_2);
+int type_array_is_equal(type_array_t *type_1, type_array_t *type_2);
+int type_struct_is_equal(type_struct_t *type_1, type_struct_t *type_2);
+int type_func_is_equal(type_func_t *type_1, type_func_t *type_2);
+int type_type_list_is_equal(type_list_t *type_1, type_list_t *type_2);
+int type_field_list_is_equal(field_list_t *type_1, field_list_t *type_2);
 
 void print_field_list(field_list_t *field_list);
 void print_type_basic(type_basic_t *type);

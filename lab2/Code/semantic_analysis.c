@@ -16,10 +16,13 @@ void semantic_fundec(TreeNode *node, type_t *type, symbol_t *symbol, field_list_
 void semantic_varlist(TreeNode *node, field_list_t *field_list);
 void semantic_paramdec(TreeNode *node, field_list_t *field_list);
 
-void semantic_compst(TreeNode *node, symbol_t *symbol, type_t *rtn_type);
+void semantic_compst(TreeNode *node, type_t *rtn_type);
 void semantic_stmtlist(TreeNode *node, type_t *rtn_type);
+void semantic_stmt(TreeNode *node, type_t *rtn_type);
+void semantic_exp(TreeNode *node, type_t *rtn_type);
 
 void symbol_table_check_add(symbol_t *symbol);
+void symbol_table_check_add_func(symbol_t *symbol_func, int is_define);
 
 void compst_env_init(symbol_t *symbol, field_list_t *param_list);
 
@@ -31,13 +34,13 @@ void param_list_check_add(symbol_t *symbol, field_list_t *param_list);
 
 void semantic_analysis(TreeNode *root)
 {
-    Print_Tree(root);
+    //Print_Tree(root);
     init_struct_type_table();
     init_symbol_table();
     semantic_analysis_r(root);
     //print_struct_type_table();
-    print_symbol_table();
-    printf("fuck!\n");
+    //print_symbol_table();
+    //printf("fuck!\n");
 }
 
 void semantic_analysis_r(TreeNode *node)
@@ -85,15 +88,17 @@ void semantic_extdef(TreeNode *node)
         semantic_fundec(specifier_next, type_specifier, symbol, field_list);
         if (strcmp(specifier_next->brother->tokenname, "SEMI") == 0)
         {
-            return;
+            symbol_table_check_add_func(symbol, 0);
         }
         else if (strcmp(specifier_next->brother->tokenname, "CompSt") == 0)
         {
+            symbol_table_check_add_func(symbol, 1);
+
             symbol_table_env_stack_push();
             compst_env_init(symbol, field_list);
-            semantic_compst(specifier_next->brother, symbol, type_specifier);
+            semantic_compst(specifier_next->brother, type_specifier);
 
-            //symbol_table_env_stack_pop();
+            symbol_table_env_stack_pop();
         }
     }
 }
@@ -248,7 +253,7 @@ void semantic_vardec(TreeNode *node, symbol_t *symbol, type_t *type)
     {
         if (strcmp(node->child->brother->brother->tokenname, "FLOAT") == 0)
         {
-            print_semantic_error(4, node->child->brother->brother->lineno,
+            print_semantic_error(12, node->child->brother->brother->lineno,
                                  node->child->brother->brother->fval);
         }
         else if (strcmp(node->child->brother->brother->tokenname, "INT") == 0)
@@ -289,7 +294,6 @@ void semantic_fundec(TreeNode *node, type_t *type, symbol_t *symbol, field_list_
     }
     type_t *type_func = (type_t *)create_type_func(type, param_list);
     init_symbol(symbol, fundec_id->idname, type_func, fundec_id->lineno, NOT_DEFINED);
-    symbol_table_check_add(symbol);
 }
 
 void semantic_varlist(TreeNode *node, field_list_t *field_list)
@@ -317,7 +321,7 @@ void semantic_paramdec(TreeNode *node, field_list_t *field_list)
     field_list_check_push_back(field_list, &symbol);
 }
 
-void semantic_compst(TreeNode *node, symbol_t *symbol, type_t *rtn_type)
+void semantic_compst(TreeNode *node, type_t *rtn_type)
 {
     assert(strcmp(node->tokenname, "CompSt") == 0);
     TreeNode *next = node->child->brother;
@@ -333,22 +337,37 @@ void semantic_compst(TreeNode *node, symbol_t *symbol, type_t *rtn_type)
     }
 }
 
-
 void semantic_stmtlist(TreeNode *node, type_t *rtn_type)
+{
+    assert(strcmp(node->tokenname, "StmtList") == 0);
+    semantic_stmt(node->child, rtn_type);
+    if (node->child->brother != NULL)
+    {
+        semantic_stmt(node->child->brother, rtn_type);
+    }
+}
+
+void semantic_stmt(TreeNode *node, type_t *rtn_type)
+{
+    assert(strcmp(node->tokenname, "Stmt") == 0);
+    TreeNode *type_stmt = node->child;
+    if (strcmp(type_stmt->tokenname, "Exp"))
+    {
+        semantic_exp(node->child, rtn_type);
+    }
+    else if (strcmp(type_stmt->tokenname, "CompSt"))
+    {
+        semantic_compst(node->child, rtn_type);
+    }
+}
+
+void semantic_exp(TreeNode *node, type_t *rtn_type)
 {
 
 }
-
 void compst_env_init(symbol_t *symbol, field_list_t *param_list)
 {
     symbol_t *find_in_table = symbol_table_find_name(symbol->name);
-    if (find_in_table != NULL)
-    {
-        if (find_in_table->is_defined == DEFINED)
-        {
-            print_semantic_error(4, symbol->lineno, symbol->name);
-        }
-    }
     param_list_add_env_layer(param_list);
 }
 
@@ -364,9 +383,39 @@ void symbol_table_check_add(symbol_t *symbol)
     }
 }
 
+void symbol_table_check_add_func(symbol_t *symbol_func, int is_define)
+{
+    if (struct_table_find_name(symbol_func->name) != NULL)
+    {
+        print_semantic_error(3, symbol_func->lineno, symbol_func->name);
+        return;
+    }
+    symbol_t *find_in_table = symbol_table_find_name(symbol_func->name);
+    if (find_in_table != NULL)
+    {
+        if (find_in_table->is_defined == DEFINED && symbol_func->is_defined == DEFINED) {
+            print_semantic_error(4, find_in_table->lineno, find_in_table->name);
+            return;
+        }
+        if (type_is_equal(symbol_func->type, find_in_table->type)) {
+            print_semantic_error(19, symbol_func->lineno, symbol_func->name);
+            return;
+        }
+        if (is_define) 
+        {
+            find_in_table->is_defined = DEFINED;
+        }
+    }
+    else
+    {
+        symbol_func->is_defined = DEFINED;
+        symbol_table_add(symbol_func);
+    }
+}
+
 void struct_table_check_add(type_struct_t *new_struct, int lineno)
 {
-    
+
     if (struct_table_find_name(new_struct->name) != NULL)
     {
         print_semantic_error(16, lineno, new_struct->name);
@@ -384,7 +433,7 @@ void field_list_check_push_back(field_list_t *field_list, symbol_t *symbol)
     {
         if (strcmp(itor->name, symbol->name) == 0)
         {
-            print_semantic_error(15, itor->lineno, symbol->name);
+            print_semantic_error(15, symbol->lineno, symbol->name);
             return;
         }
     }

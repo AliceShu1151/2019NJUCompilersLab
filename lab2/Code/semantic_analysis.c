@@ -137,11 +137,7 @@ type_t *semantic_structspecifier(TreeNode *node)
     if (strcmp(struct_next->tokenname, "OptTag") == 0)
     {
         field_list_t *field_list = create_field_list();
-        if (strcmp(struct_next->brother->brother->tokenname, "RC") == 0)
-        {
-            field_list = NULL;
-        }
-        else
+        if (strcmp(struct_next->brother->brother->tokenname, "RC") != 0)
         {
             semantic_deflist(struct_next->brother->brother, STRUCT_SPECIFIER, field_list);
         }
@@ -162,11 +158,7 @@ type_t *semantic_structspecifier(TreeNode *node)
     else if (strcmp(struct_next->tokenname, "LC") == 0)
     {
         field_list_t *field_list = create_field_list();
-        if (strcmp(struct_next->brother->tokenname, "RC") == 0)
-        {
-            field_list = NULL;
-        }
-        else
+        if (strcmp(struct_next->brother->tokenname, "RC") != 0)
         {
             semantic_deflist(struct_next->brother, STRUCT_SPECIFIER, field_list);
         }
@@ -229,7 +221,7 @@ void semantic_dec(TreeNode *node, type_t *type, field_list_t *field_list, int wh
     {
         symbol_table_check_add(symbol);
     }
-    TreeNode *assignop = node->brother;
+    TreeNode *assignop = node->child->brother;
     if (assignop == NULL)
     {
         return;
@@ -238,8 +230,9 @@ void semantic_dec(TreeNode *node, type_t *type, field_list_t *field_list, int wh
     {
         if (where == STRUCT_SPECIFIER)
         {
-            print_semantic_error(15, node->lineno, node->tokenname);
+            print_semantic_error(15, node->lineno, symbol->name);
         }
+        //todo
     }
 }
 
@@ -284,11 +277,7 @@ void semantic_fundec(TreeNode *node, type_t *type, symbol_t *symbol, field_list_
     assert(strcmp(node->tokenname, "FunDec") == 0);
     TreeNode *fundec_id = node->child;
     type_list_t *param_list = create_type_list();
-    if (strcmp(fundec_id->brother->brother->tokenname, "RP") == 0)
-    {
-        param_list = NULL;
-    }
-    else
+    if (strcmp(fundec_id->brother->brother->tokenname, "RP") != 0)
     {
         semantic_varlist(fundec_id->brother->brother, field_list);
         field_list_add_to_type_list(field_list, param_list);
@@ -352,13 +341,36 @@ void semantic_stmt(TreeNode *node, type_t *rtn_type)
 {
     assert(strcmp(node->tokenname, "Stmt") == 0);
     TreeNode *type_stmt = node->child;
-    if (strcmp(type_stmt->tokenname, "Exp"))
+    if (strcmp(type_stmt->tokenname, "Exp") == 0)
     {
         semantic_exp(node->child, rtn_type);
     }
-    else if (strcmp(type_stmt->tokenname, "CompSt"))
+    else if (strcmp(type_stmt->tokenname, "CompSt") == 0)
     {
         semantic_compst(node->child, rtn_type);
+    }
+    else if (strcmp(type_stmt->tokenname, "RETURN") == 0)
+    {
+        semantic_exp(type_stmt->brother, rtn_type);
+    }
+    else if (strcmp(type_stmt->tokenname, "IF") == 0)
+    {
+        TreeNode *exp = type_stmt->brother->brother;
+        semantic_exp(exp, rtn_type);
+        TreeNode *stmt = exp->brother->brother;
+        semantic_stmt(stmt, rtn_type);
+        if (stmt->brother != NULL)
+        {
+            stmt = stmt->brother->brother;
+            semantic_stmt(stmt, rtn_type);
+        }
+    }
+    else if (strcmp(type_stmt->tokenname, "WHILE") == 0)
+    {
+        TreeNode *exp = type_stmt->brother->brother;
+        semantic_exp(exp, rtn_type);
+        TreeNode *stmt = exp->brother->brother;
+        semantic_stmt(stmt, rtn_type);
     }
 }
 
@@ -366,6 +378,7 @@ void semantic_exp(TreeNode *node, type_t *rtn_type)
 {
 
 }
+
 void compst_env_init(symbol_t *symbol, field_list_t *param_list)
 {
     param_list_add_env_layer(param_list);
@@ -393,15 +406,17 @@ void symbol_table_check_add_func(symbol_t *symbol_func, int is_define)
     symbol_t *find_in_table = symbol_table_find_name(symbol_func->name);
     if (find_in_table != NULL)
     {
-        if (find_in_table->is_defined == DEFINED && symbol_func->is_defined == DEFINED) {
-            print_semantic_error(4, find_in_table->lineno, find_in_table->name);
+        if (find_in_table->is_defined == DEFINED && is_define == DEFINED)
+        {
+            print_semantic_error(4, symbol_func->lineno, symbol_func->name);
             return;
         }
-        if (type_is_equal(symbol_func->type, find_in_table->type) == TYPE_NOT_EQUAL) {
+        if (type_is_equal(symbol_func->type, find_in_table->type) == TYPE_NOT_EQUAL)
+        {
             print_semantic_error(19, symbol_func->lineno, symbol_func->name);
             return;
         }
-        if (is_define) 
+        if (is_define)
         {
             find_in_table->is_defined = DEFINED;
         }

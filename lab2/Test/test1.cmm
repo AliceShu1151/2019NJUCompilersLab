@@ -1,5 +1,5 @@
 int d,f;
-int a[2][3];
+int a[d][3];
 
 struct g{int x;} test_1;
 struct {int x;} test_2;

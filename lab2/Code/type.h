@@ -88,7 +88,7 @@ typedef struct symbol_table_node
 typedef struct environment_layer
 {
     st_node_t *env_node_list;
-    struct environment_node *next_layer;
+    struct environment_layer *next_layer;
 } env_layer_t;
 
 // hash table
@@ -102,7 +102,7 @@ typedef struct symbol_table
 
 void init_type_list(type_list_t *type_list);
 env_layer_t *init_enviroment_stack();
-void init_hash_table(st_node_t *h_table);
+void init_hash_table(st_node_t **h_table);
 
 type_basic_t *create_type_basic(int type);
 type_array_t *create_type_array(int size, type_t *type);
@@ -111,7 +111,7 @@ type_func_t *create_type_func(type_t* rtn_type, type_list_t *param_list);
 
 void init_symbol(symbol_t *symbol, const char *name, 
                         type_t *type, int lineno, int is_defined);
-
+symbol_t *create_symbol();
 
 field_node_t *create_field_node(const char* name, type_t *type);
 field_list_t *create_field_list();

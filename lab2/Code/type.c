@@ -1,6 +1,7 @@
 #include "type.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 void init_type_list(type_list_t *type_list)
 {
@@ -18,9 +19,9 @@ env_layer_t *init_enviroment_stack()
     return rtn;
 }
 
-void init_hash_table(st_node_t *h_table)
+void init_hash_table(st_node_t **h_table)
 {
-
+    memset(h_table, 0, sizeof(st_node_t *)*HASH_TABLE_SIZE);
 }
 
 
@@ -83,6 +84,14 @@ field_list_t *create_field_list()
     rtn->start = NULL;
     rtn->end =NULL;
     return rtn; 
+}
+
+symbol_t *create_symbol()
+{
+    symbol_t *rtn = malloc(sizeof(symbol_t));
+    rtn->is_defined = NOT_DEFINED;
+    rtn->type = NULL;
+    return rtn;
 }
 
 type_node_t *create_list_node(type_t *type)

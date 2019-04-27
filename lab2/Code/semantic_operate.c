@@ -45,7 +45,7 @@ void init_struct_type_table()
 void init_symbol_table()
 {
     symbol_table.env_stack_top = init_enviroment_stack();
-    init_hash_table(&symbol_table.h_table);
+    init_hash_table(symbol_table.h_table);
 }
 
 int type_struct_equal(type_struct_t *struct_type, const char *struct_name)
@@ -161,8 +161,6 @@ void symbol_table_add(symbol_t *symbol)
 }
 
 
-
-
 void print_struct_type_table()
 {
     type_node_t *itor;
@@ -172,12 +170,11 @@ void print_struct_type_table()
     }
 }
 
-
-
 void print_env_layer(st_node_t *node_list)
 {
     for(st_node_t *itor = node_list->next; itor != NULL; itor = itor->sibling)
     {
+    printf("1\n");
         print_symbol(itor->symbol);
     }
     printf("\n");

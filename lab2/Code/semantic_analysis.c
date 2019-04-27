@@ -173,6 +173,7 @@ type_t *semantic_structspecifier(TreeNode *node)
         specifier_struct = (type_t *)create_type_struct(NULL, field_list);
         return specifier_struct;
     }
+    return NULL;
 }
 void semantic_deflist(TreeNode *node, int where, field_list_t *field_list)
 {
@@ -367,7 +368,6 @@ void semantic_exp(TreeNode *node, type_t *rtn_type)
 }
 void compst_env_init(symbol_t *symbol, field_list_t *param_list)
 {
-    symbol_t *find_in_table = symbol_table_find_name(symbol->name);
     param_list_add_env_layer(param_list);
 }
 
@@ -397,7 +397,7 @@ void symbol_table_check_add_func(symbol_t *symbol_func, int is_define)
             print_semantic_error(4, find_in_table->lineno, find_in_table->name);
             return;
         }
-        if (type_is_equal(symbol_func->type, find_in_table->type)) {
+        if (type_is_equal(symbol_func->type, find_in_table->type) == TYPE_NOT_EQUAL) {
             print_semantic_error(19, symbol_func->lineno, symbol_func->name);
             return;
         }
@@ -408,7 +408,7 @@ void symbol_table_check_add_func(symbol_t *symbol_func, int is_define)
     }
     else
     {
-        symbol_func->is_defined = DEFINED;
+        symbol_func->is_defined = is_define;
         symbol_table_add(symbol_func);
     }
 }

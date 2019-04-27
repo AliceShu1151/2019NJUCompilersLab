@@ -124,7 +124,7 @@ env_layer_t *create_env_layer();
 
 unsigned int hash_pjw(const char *name);
 
-enum {TYPE_EQUAL, TYPE_NOT_EQUAL};
+enum {TYPE_NOT_EQUAL, TYPE_EQUAL};
 int type_is_equal(type_t *type_1, type_t *type_2);
 int type_basic_is_equal(type_basic_t *type_1, type_basic_t *type_2);
 int type_array_is_equal(type_array_t *type_1, type_array_t *type_2);

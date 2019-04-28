@@ -38,6 +38,7 @@ type_t *exp_type_check_binary_arith(TreeNode *exp_1, TreeNode *exp_2, int *is_le
 
 void symbol_table_check_add(symbol_t *symbol);
 void symbol_table_check_add_func(symbol_t *symbol_func, int is_define);
+void symbol_table_check_undefined();
 
 void compst_env_init(symbol_t *symbol, field_list_t *param_list);
 
@@ -53,9 +54,9 @@ void semantic_analysis(TreeNode *root)
     init_struct_type_table();
     init_symbol_table();
     semantic_analysis_r(root);
+    symbol_table_check_undefined();
     //print_struct_type_table();
     //print_symbol_table();
-    //printf("fuck!\n");
 }
 
 void semantic_analysis_r(TreeNode *node)
@@ -529,9 +530,9 @@ type_t *exp_type_check_func(TreeNode *node, TreeNode *args, int *is_left_value)
     if (type_type_list_is_equal(type_func->parameters, arg_type_list) == TYPE_NOT_EQUAL)
     {
         printf("Error type %d at Line %d: Function \"%s(", 9, node->lineno, symbol->name);
-        print_type_list_simple(arg_type_list);
-        printf(")\" is not applicable for arguments \"(");
         print_type_list_simple(type_func->parameters);
+        printf(")\" is not applicable for arguments \"(");
+        print_type_list_simple(arg_type_list);
         printf(")\".\n");
     }
     return type_func->return_type;
@@ -793,6 +794,7 @@ void struct_table_check_add(type_struct_t *new_struct, int lineno)
         struct_table_push_back(new_struct);
     }
 }
+
 
 void field_list_check_push_back(field_list_t *field_list, symbol_t *symbol)
 {

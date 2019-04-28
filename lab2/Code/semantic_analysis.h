@@ -4,3 +4,5 @@
 enum {STRUCT_SPECIFIER, STATEMENT};
 
 void semantic_analysis(TreeNode *root);
+
+void symbol_table_check_undefined();

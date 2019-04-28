@@ -23,7 +23,11 @@ static char *error_msg[20] = {
     "Duplicated name \"%s\".\n",
     "Undefined structure \"%s\".\n",
     "Undefined function \"%s\".\n",
-    "Inconsistent declaration of function \"%s\".\n"};
+    "Inconsistent declaration of function \"%s\".\n"
+    };
+
+int type_struct_equal_find_name(type_struct_t *struct_type, const char *struct_name);
+void env_layer_add_node(st_node_t *new_node);
 
 void print_semantic_error(int error_type, int lineno, ...)
 {
@@ -46,7 +50,7 @@ void init_symbol_table()
     init_hash_table(symbol_table.h_table);
 }
 
-int type_struct_equal(type_struct_t *struct_type, const char *struct_name)
+int type_struct_equal_find_name(type_struct_t *struct_type, const char *struct_name)
 {
     assert(struct_type->type_kind == TYPE_STRUCT);
     if (strcmp(struct_type->name, struct_name) == 0)
@@ -55,8 +59,6 @@ int type_struct_equal(type_struct_t *struct_type, const char *struct_name)
     }
     return 0;
 }
-
-
 
 void struct_table_push_back(type_struct_t *new_struct)
 {
@@ -84,7 +86,7 @@ type_t *struct_table_find_name(const char *struct_name)
     type_node_t *itor = struct_type_table.start;
     while (itor != NULL)
     {
-        if (type_struct_equal((type_struct_t *)itor->type, struct_name))
+        if (type_struct_equal_find_name((type_struct_t *)itor->type, struct_name))
         {
             return itor->type;
         }
@@ -192,6 +194,24 @@ void print_struct_type_table()
     for (itor = struct_type_table.start; itor != NULL; itor = itor->next_node)
     {
         print_type(itor->type);
+    }
+}
+
+void env_layer_check_undefined(st_node_t *node_list)
+{
+    for (st_node_t *itor = node_list; itor != NULL; itor = itor->sibling)
+    {
+        if (itor->symbol->is_defined == NOT_DEFINED) {
+            print_semantic_error(18, itor->symbol->lineno, itor->symbol->name);
+        }
+    }
+}
+
+void symbol_table_check_undefined()
+{
+    for (env_layer_t *itor = symbol_table.env_stack_top; itor != NULL; itor = itor->next_layer)
+    {
+        env_layer_check_undefined(itor->env_node_list);
     }
 }
 

@@ -23,6 +23,7 @@ type_t *struct_table_find_name(const char *struct_name);
 void symbol_table_add(symbol_t * symbol);
 void symbol_table_del(unsigned int hash_num, st_node_t *node);
 symbol_t *symbol_table_find_name(const char *name);
+void symbol_table_check_undefined();
 
 st_node_t *env_layer_find_name(st_node_t *node_list, const char *name);
 st_node_t *top_env_layer_find_name(const char *name);

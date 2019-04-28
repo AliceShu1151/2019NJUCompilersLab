@@ -532,7 +532,7 @@ type_t *exp_type_check_func(TreeNode *node, TreeNode *args, int *is_left_value)
         print_type_list(arg_type_list);
         printf(")\" is not applicable for arguments \"(");
         print_type_list(type_func->parameters);
-        printf(")\".");
+        printf(")\".\n");
     }
     return type_func->return_type;
 }

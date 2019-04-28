@@ -321,12 +321,13 @@ void print_field_list(field_list_t *field_list)
 
 void print_type_list(type_list_t *type_list)
 {
-    type_node_t *itor;
-    for (itor = type_list->start; itor != NULL; itor = itor->next_node)
+    type_node_t *itor = type_list->start;
+    print_type(itor->type);
+    for (itor = itor->next_node; itor != NULL; itor = itor->next_node)
     {
+        printf(",");
         print_type(itor->type);
     }
-    printf("\n");
 }
 
 void print_type_basic(type_basic_t *type)

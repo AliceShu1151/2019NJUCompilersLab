@@ -14,9 +14,9 @@ static char *error_msg[20] = {
     "Type mismatched for operands.\n",
     "Type mismatched for return.\n",
     "Function \"%s\" is not applicable for arguments \"%s\".\n",
-    "\"%s\" is not an array.\n",
+    "This is not an array.\n",
     "\"%s\" is not a function.\n",
-    "\"%f\" is not an integer.\n",
+    "This is not an integer.\n",
     "Illegal use of \".\".\n",
     "Non-existent field \"%s\".\n",
     "Redefined field \"%s\" or Field assigned during definition.\n",
@@ -27,6 +27,7 @@ static char *error_msg[20] = {
 
 void print_semantic_error(int error_type, int lineno, ...)
 {
+    semantic_error = 1;
     printf("Error type %d at Line %d: ", error_type, lineno);
     va_list ap;
     va_start(ap, lineno);

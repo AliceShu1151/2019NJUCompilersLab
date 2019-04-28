@@ -355,7 +355,7 @@ void semantic_stmtlist(TreeNode *node, type_t *rtn_type)
     semantic_stmt(node->child, rtn_type);
     if (node->child->brother != NULL)
     {
-        semantic_stmt(node->child->brother, rtn_type);
+        semantic_stmtlist(node->child->brother, rtn_type);
     }
 }
 
@@ -472,7 +472,7 @@ type_t *semantic_exp(TreeNode *node, int *is_left_value)
 type_t *exp_type_check_int(TreeNode *node, int *is_left_value)
 {
     assert(strcmp(node->tokenname, "INT") == 0);
-    if (is_left_value == NULL)
+    if (is_left_value != NULL)
     {
         *is_left_value = 0;
     }
@@ -482,7 +482,7 @@ type_t *exp_type_check_int(TreeNode *node, int *is_left_value)
 type_t *exp_type_check_float(TreeNode *node, int *is_left_value)
 {
     assert(strcmp(node->tokenname, "FLOAT") == 0);
-    if (is_left_value == NULL)
+    if (is_left_value != NULL)
     {
         *is_left_value = 0;
     }
@@ -492,7 +492,7 @@ type_t *exp_type_check_float(TreeNode *node, int *is_left_value)
 type_t *exp_type_check_var(TreeNode *node, int *is_left_value)
 {
     assert(strcmp(node->tokenname, "ID") == 0);
-    if (is_left_value == NULL)
+    if (is_left_value != NULL)
     {
         *is_left_value = 1;
     }
@@ -508,13 +508,18 @@ type_t *exp_type_check_var(TreeNode *node, int *is_left_value)
 type_t *exp_type_check_func(TreeNode *node, TreeNode *args, int *is_left_value)
 {
     assert(strcmp(node->tokenname, "ID") == 0);
-    if (is_left_value == NULL)
+    if (is_left_value != NULL)
     {
         *is_left_value = 0;
     }
     symbol_t *symbol = symbol_table_find_name(node->idname);
     if (symbol == NULL)
     {
+        print_semantic_error(2, node->lineno, node->idname);
+        return NULL;
+    }
+    if (symbol->type->type_kind != TYPE_FUNCTION) 
+    {        
         print_semantic_error(11, node->lineno, node->idname);
         return NULL;
     }
@@ -535,11 +540,11 @@ type_t *exp_type_check_func(TreeNode *node, TreeNode *args, int *is_left_value)
 type_t *exp_type_check_unary_minus(TreeNode *node, int *is_left_value)
 {
     assert(strcmp(node->tokenname, "MINUS") == 0);
-    if (is_left_value == NULL)
+    if (is_left_value != NULL)
     {
         *is_left_value = 0;
     }
-    type_t *type_exp = semantic_exp(node->brother, is_left_value);
+    type_t *type_exp = semantic_exp(node->brother, NULL);
     if (type_exp == NULL)
     {
         return NULL;
@@ -554,11 +559,11 @@ type_t *exp_type_check_unary_minus(TreeNode *node, int *is_left_value)
 type_t *exp_type_check_unary_not(TreeNode *node, int *is_left_value)
 {
     assert(strcmp(node->tokenname, "MINUS") == 0);
-    if (is_left_value == NULL)
+    if (is_left_value != NULL)
     {
         *is_left_value = 0;
     }
-    type_t *type_exp = semantic_exp(node->brother, is_left_value);
+    type_t *type_exp = semantic_exp(node->brother, NULL);
     if (type_exp == NULL)
     {
         return NULL;
@@ -573,11 +578,11 @@ type_t *exp_type_check_unary_not(TreeNode *node, int *is_left_value)
 type_t *exp_type_check_struct_dot(TreeNode *exp, TreeNode *dot, TreeNode *id, int *is_left_value)
 {
     assert(strcmp(dot->tokenname, "DOT") == 0);
-    if (is_left_value == NULL)
+    if (is_left_value != NULL)
     {
         *is_left_value = 1;
     }
-    type_t *type_exp = semantic_exp(exp, is_left_value);
+    type_t *type_exp = semantic_exp(exp, NULL);
     if (type_exp == NULL)
     {
         return NULL;
@@ -586,6 +591,7 @@ type_t *exp_type_check_struct_dot(TreeNode *exp, TreeNode *dot, TreeNode *id, in
     if (type_exp->type_kind != TYPE_STRUCT)
     {
         print_semantic_error(13, dot->lineno);
+        return NULL;
     }
     field_node_t *field_node = field_list_find_name(((type_struct_t *)type_exp)->struct_fields, id->idname);
     if (field_node == NULL)
@@ -598,31 +604,30 @@ type_t *exp_type_check_struct_dot(TreeNode *exp, TreeNode *dot, TreeNode *id, in
 
 type_t *exp_type_check_array(TreeNode *exp_1, TreeNode *exp_2, int *is_left_value)
 {
-    if (is_left_value == NULL)
+    if (is_left_value != NULL)
     {
         *is_left_value = 1;
     }
-    type_t *type_1 = semantic_exp(exp_1, is_left_value);
-    type_t *type_2 = semantic_exp(exp_2, is_left_value);
+    type_t *type_1 = semantic_exp(exp_1, NULL);
+    type_t *type_2 = semantic_exp(exp_2, NULL);
     if (type_1 != NULL && type_1->type_kind != TYPE_ARRAY)
     {
-        const char *exp_name = Find_NonTermNode_Name(exp_1);
-        print_semantic_error(10, exp_1->lineno, exp_name);
+        print_semantic_error(10, exp_1->lineno);
     }
     if (type_2 != NULL && !type_is_int(type_2))
     {
-        print_semantic_error(12, exp_2->lineno, exp_2->fval);
+        print_semantic_error(12, exp_2->lineno);
     }
-    if (type_1 != NULL)
+    if (type_1 != NULL && type_1->type_kind == TYPE_ARRAY)
     {
-        return type_1;
+        return ((type_array_t *)type_1)->extend;
     }
     return NULL;
 }
 
 type_t *exp_type_check_assign(TreeNode *exp_1, TreeNode *exp_2, int *is_left_value)
 {
-    if (is_left_value == NULL)
+    if (is_left_value != NULL)
     {
         *is_left_value = 0;
     }
@@ -631,7 +636,7 @@ type_t *exp_type_check_assign(TreeNode *exp_1, TreeNode *exp_2, int *is_left_val
     type_t *type_2 = semantic_exp(exp_2, NULL);
     if (type_1 != NULL && !type_1_is_left_value)
     {
-        print_semantic_error(4, exp_1->lineno);
+        print_semantic_error(6, exp_1->lineno);
         return NULL;
     }
     if (type_1 == NULL || type_2 == NULL)
@@ -643,12 +648,13 @@ type_t *exp_type_check_assign(TreeNode *exp_1, TreeNode *exp_2, int *is_left_val
         print_semantic_error(5, exp_1->lineno);
         return NULL;
     }
+    assert(type_1->type_kind != TYPE_FUNCTION);
     return type_1;
 }
 
 type_t *exp_type_check_binary_bit(TreeNode *exp_1, TreeNode *exp_2, int *is_left_value)
 {
-    if (is_left_value == NULL)
+    if (is_left_value != NULL)
     {
         *is_left_value = 0;
     }
@@ -673,7 +679,7 @@ type_t *exp_type_check_binary_bit(TreeNode *exp_1, TreeNode *exp_2, int *is_left
 
 type_t *exp_type_check_binary_relop(TreeNode *exp_1, TreeNode *exp_2, int *is_left_value)
 {
-    if (is_left_value == NULL)
+    if (is_left_value != NULL)
     {
         *is_left_value = 0;
     }
@@ -698,7 +704,7 @@ type_t *exp_type_check_binary_relop(TreeNode *exp_1, TreeNode *exp_2, int *is_le
 
 type_t *exp_type_check_binary_arith(TreeNode *exp_1, TreeNode *exp_2, int *is_left_value)
 {
-    if (is_left_value == NULL)
+    if (is_left_value != NULL)
     {
         *is_left_value = 0;
     }
@@ -777,7 +783,7 @@ void symbol_table_check_add_func(symbol_t *symbol_func, int is_define)
 void struct_table_check_add(type_struct_t *new_struct, int lineno)
 {
 
-    if (top_env_layer_find_name(new_struct->name) != NULL)
+    if (struct_table_find_name(new_struct->name) != NULL)
     {
         print_semantic_error(16, lineno, new_struct->name);
     }

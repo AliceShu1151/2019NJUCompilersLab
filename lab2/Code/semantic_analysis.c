@@ -529,9 +529,9 @@ type_t *exp_type_check_func(TreeNode *node, TreeNode *args, int *is_left_value)
     if (type_type_list_is_equal(type_func->parameters, arg_type_list) == TYPE_NOT_EQUAL)
     {
         printf("Error type %d at Line %d: Function \"%s(", 9, node->lineno, symbol->name);
-        print_type_list(arg_type_list);
+        print_type_list_simple(arg_type_list);
         printf(")\" is not applicable for arguments \"(");
-        print_type_list(type_func->parameters);
+        print_type_list_simple(type_func->parameters);
         printf(")\".\n");
     }
     return type_func->return_type;
@@ -558,7 +558,7 @@ type_t *exp_type_check_unary_minus(TreeNode *node, int *is_left_value)
 
 type_t *exp_type_check_unary_not(TreeNode *node, int *is_left_value)
 {
-    assert(strcmp(node->tokenname, "MINUS") == 0);
+    assert(strcmp(node->tokenname, "NOT") == 0);
     if (is_left_value != NULL)
     {
         *is_left_value = 0;
@@ -570,7 +570,8 @@ type_t *exp_type_check_unary_not(TreeNode *node, int *is_left_value)
     }
     if (!type_is_int(type_exp))
     {
-        print_semantic_error(7, node->child->lineno);
+        print_semantic_error(7, node->brother->lineno);
+        return NULL;
     }
     return type_exp;
 }
@@ -595,7 +596,7 @@ type_t *exp_type_check_struct_dot(TreeNode *exp, TreeNode *dot, TreeNode *id, in
     }
     field_node_t *field_node = field_list_find_name(((type_struct_t *)type_exp)->struct_fields, id->idname);
     if (field_node == NULL)
-    {
+    {    
         print_semantic_error(14, exp->lineno, id->idname);
         return NULL;
     }

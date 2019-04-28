@@ -101,7 +101,7 @@ type_list_t *create_type_list()
     return rtn;
 }
 
-type_list_t *type_list_push_back(type_list_t *type_list, type_t *type)
+void type_list_push_back(type_list_t *type_list, type_t *type)
 {
     type_node_t *type_node = create_type_node(type);
     if (type_list->start == NULL)
@@ -191,9 +191,9 @@ unsigned int hash_pjw(const char *name)
     for (const char *itor = name; *itor; ++itor)
     {
         val = (val << 2) + *itor;
-        if (i == val & ~HASH_TABLE_SIZE)
+        if ((i = val & ~0x3fff))
         {
-            val = (val ^ (i >> 12)) & HASH_TABLE_SIZE;
+            val = (val ^ (i >> 12)) & 0x3fff;
         }
     }
     return val;
@@ -330,6 +330,17 @@ void print_type_list(type_list_t *type_list)
     }
 }
 
+void print_type_list_simple(type_list_t *type_list)
+{
+    type_node_t *itor = type_list->start;
+    print_type_simple(itor->type);
+    for (itor = itor->next_node; itor != NULL; itor = itor->next_node)
+    {
+        printf(",");
+        print_type_simple(itor->type);
+    }
+}
+
 void print_type_basic(type_basic_t *type)
 {
     if (type->int_or_float == TYPE_BASIC_INT)
@@ -348,6 +359,12 @@ void print_type_array(type_array_t *type)
     print_type(type->extend);
 }
 
+void print_type_array_simple(type_array_t *type)
+{
+    printf("array[%d]", type->size);
+    print_type_simple(type->extend);
+}
+
 void print_type_struct(type_struct_t *type)
 {
     printf("struct: %s\n", type->name);
@@ -358,7 +375,7 @@ void print_type_func(type_func_t *type)
 {
     printf("function:\n");
     print_type(type->return_type);
-    //print_type_list(type->parameters);
+    print_type_list(type->parameters);
 }
 
 void print_type(type_t *type)
@@ -382,6 +399,22 @@ void print_type(type_t *type)
     else if (type->type_kind == TYPE_FUNCTION)
     {
         print_type_func((type_func_t *)type);
+    }
+}
+
+void print_type_simple(type_t *type)
+{
+    if (type->type_kind == TYPE_BASIC)
+    {
+        print_type_basic((type_basic_t *)type);
+    }
+    else if (type->type_kind == TYPE_ARRAY)
+    {
+        print_type_array_simple((type_array_t *)type);
+    }
+    else if (type->type_kind == TYPE_STRUCT)
+    {
+        printf("struct:%s", ((type_struct_t *)type)->name);
     }
 }
 

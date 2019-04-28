@@ -118,7 +118,7 @@ field_list_t *create_field_list();
 type_node_t *create_type_node(type_t *type);
 type_list_t *create_type_list();
 
-type_list_t *type_list_push_back(type_list_t *type_list, type_t *type);
+void type_list_push_back(type_list_t *type_list, type_t *type);
 
 void field_list_push_back(field_list_t *field_list, type_t *type, const char *name, int lineno);
 void field_list_add_to_type_list(field_list_t *field_list, type_list_t *type_list);
@@ -142,10 +142,13 @@ int type_is_int(type_t *type);
 
 void print_field_list(field_list_t *field_list);
 void print_type_list(type_list_t *type_list);
+void print_type_list_simple(type_list_t *type_list);
 
 void print_type_basic(type_basic_t *type);
 void print_type_array(type_array_t *type);
+void print_type_array_simple(type_array_t *type);
 void print_type_struct(type_struct_t *type);
 void print_type_func(type_func_t *type);
 void print_type(type_t *type);
 void print_symbol(symbol_t *symbol);
+void print_type_simple(type_t *type);

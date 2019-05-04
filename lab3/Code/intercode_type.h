@@ -15,6 +15,8 @@ struct operand
     };
 };
 operand_t *create_operand(int operand_kind, int val);
+void print_operand(operand_t *operand);
+void print_operator(int operator_kind);
 
 enum
 {
@@ -113,6 +115,7 @@ typedef struct intercode_node_goto
 typedef struct intercode_node_if_goto
 {
     int kind;
+    int operator_kind;
     operand_t *if_left;
     operand_t *if_right;
     int target_label;
@@ -184,3 +187,40 @@ intercode_node_t *create_intercode_node_call(const char *call_name, operand_t *c
 intercode_node_t *create_intercode_node_param(int var_no);
 intercode_node_t *create_intercode_node_read(int var_no);
 intercode_node_t *create_intercode_node_write(int var_no);
+
+void print_intercode_node(intercode_node_t *node);
+void print_intercode_node_label(intercode_node_label_t *node);
+void print_intercode_node_func(intercode_node_func_t *node);
+void print_intercode_node_assign(intercode_node_assign_t *node);
+void print_intercode_node_binary(intercode_node_binary_t *node);
+void print_intercode_node_ref(intercode_node_ref_t *node);
+void print_intercode_node_dref(intercode_node_dref_t *node);
+void print_intercode_node_dref_assign(intercode_node_dref_assign_t *node);
+void print_intercode_node_goto(intercode_node_goto_t *node);
+void print_intercode_node_if_goto(intercode_node_if_goto_t *node);
+void print_intercode_node_return(intercode_node_return_t *node);
+void print_intercode_node_dec(intercode_node_dec_t *node);
+void print_intercode_node_arg(intercode_node_arg_t *node);
+void print_intercode_node_call(intercode_node_call_t *node);
+void print_intercode_node_param(intercode_node_param_t *node);
+void print_intercode_node_read(intercode_node_read_t *node);
+void print_intercode_node_write(intercode_node_write_t *node);
+
+
+typedef struct intercode_line intercode_line_t;
+struct intercode_line
+{
+    intercode_node_t *node;
+    intercode_line_t *prev;
+    intercode_line_t *next;
+};
+
+typedef struct intercode_list intercode_list_t;
+struct intercode_list
+{
+    int size;
+    intercode_line_t *start;
+    intercode_line_t *end;
+};
+
+void print_intercode_list(intercode_list_t *list);

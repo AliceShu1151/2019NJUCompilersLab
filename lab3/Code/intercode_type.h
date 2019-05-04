@@ -14,6 +14,7 @@ struct operand
         int addr;
     };
 };
+operand_t *create_operand(int operand_kind, int val);
 
 enum
 {
@@ -69,38 +70,38 @@ typedef struct intercode_node_func
 typedef struct intercode_node_assign
 {
     int kind;
-    operand_t right;
-    operand_t left;
+    operand_t *left;
+    operand_t *right;
 } intercode_node_assign_t;
 
 typedef struct intercode_node_binary
 {
     int kind;
     int operator_kind;
-    operand_t target;
-    operand_t left;
-    operand_t right;
+    operand_t *target;
+    operand_t *left;
+    operand_t *right;
 } intercode_node_binary_t;
 
 typedef struct intercode_node_ref
 {
     int kind;
-    operand_t left;
-    operand_t right;
+    operand_t *left;
+    operand_t *right;
 } intercode_node_ref_t;
 
 typedef struct intercode_node_dref
 {
     int kind;
-    operand_t left;
-    operand_t right;
+    operand_t *left;
+    operand_t *right;
 } intercode_node_dref_t;
 
 typedef struct intercode_node_dref_assign
 {
     int kind;
-    operand_t left;
-    operand_t right;
+    operand_t *left;
+    operand_t *right;
 } intercode_node_dref_assign_t;
 
 typedef struct intercode_node_goto
@@ -112,15 +113,15 @@ typedef struct intercode_node_goto
 typedef struct intercode_node_if_goto
 {
     int kind;
-    operand_t if_left;
-    operand_t if_right;
-    int target;
+    operand_t *if_left;
+    operand_t *if_right;
+    int target_label;
 } intercode_node_if_goto_t;
 
 typedef struct intercode_node_return
 {
     int kind;
-    operand_t rtn;
+    operand_t *ret;
 } intercode_node_return_t;
 
 typedef struct intercode_node_dec
@@ -140,7 +141,7 @@ typedef struct intercode_node_call
 {
     int kind;
     const char *call_name;
-    operand_t call_rtn;
+    operand_t *call_rtn;
 } intercode_node_call_t;
 
 typedef struct intercode_node_param
@@ -160,3 +161,26 @@ typedef struct intercode_node_write
     int kind;
     int var_no;
 } intercode_node_write_t;
+
+void init_var_no();
+int malloc_var_no();
+
+void init_label_no();
+int malloc_label_no();
+
+intercode_node_t *create_intercode_node_label(int label);
+intercode_node_t *create_intercode_node_func(const char *func_name);
+intercode_node_t *create_intercode_node_assign(operand_t *left, operand_t *right);
+intercode_node_t *create_intercode_node_binary(int operator_kind, operand_t *target, operand_t *left, operand_t *right);
+intercode_node_t *create_intercode_node_ref(operand_t *left, operand_t *right);
+intercode_node_t *create_intercode_node_dref(operand_t *left, operand_t *right);
+intercode_node_t *create_intercode_node_dref_assign(operand_t *left, operand_t *right);
+intercode_node_t *create_intercode_node_goto(int label);
+intercode_node_t *create_intercode_node_if_goto(operand_t *if_left, operand_t *if_right, int target_label);
+intercode_node_t *create_intercode_return(operand_t *ret);
+intercode_node_t *create_intercode_node_dec(int var_no, int size);
+intercode_node_t *create_intercode_node_arg(int var_no);
+intercode_node_t *create_intercode_node_call(const char *call_name, operand_t *call_rtn);
+intercode_node_t *create_intercode_node_param(int var_no);
+intercode_node_t *create_intercode_node_read(int var_no);
+intercode_node_t *create_intercode_node_write(int var_no);

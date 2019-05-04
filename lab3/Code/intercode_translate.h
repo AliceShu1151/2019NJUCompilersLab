@@ -17,6 +17,4 @@ struct intercode_list
     intercode_line_t *end;
 };
 
-
-
 void intercode_translate(TreeNode *root);

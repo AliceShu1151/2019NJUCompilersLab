@@ -3,26 +3,53 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-operand_t *create_operand(int operand_kind, int val)
+static intercode_list_t intercode_list;
+
+
+operand_t *create_operand_const_int(int ival)
+{
+    operand_t *rtn = malloc(sizeof(operand_t));
+    rtn->kind = OPERAND_CONSTANT_I;
+    rtn->value_int = ival;
+    return rtn;
+}
+
+operand_t *create_operand_const_float(float fval)
+{
+    operand_t *rtn = malloc(sizeof(operand_t));
+    rtn->kind = OPERAND_CONSTANT_F;
+    rtn->value_flt = fval;
+    return rtn;
+}
+
+operand_t *create_operand_const(TreeNode *node)
+{
+    if (strcmp(node->tokenname, "INT") == 0)
+        return create_operand_const_int(node->ival);
+    else if (strcmp(node->tokenname, "FLOAT") == 0)    
+        return create_operand_const_float(node->fval);
+    return NULL;
+}
+
+operand_t *create_operand_var(int operand_kind, int var_no)
 {
     operand_t *rtn = malloc(sizeof(operand_t));
     rtn->kind = operand_kind;
-    if (operand_kind == OPERAND_ADDRESS)
-        rtn->addr = val;
-    else if (operand_kind == OPERAND_CONSTANT)
-        rtn->value = val;
-    else if (operand_kind == OPERAND_VARIABLE)
-        rtn->var_no = val;
+    rtn->var_no = var_no;
     return rtn;
 }
 
 void print_operand(operand_t *operand)
 {
     assert(operand != NULL);
-    if (operand->kind == OPERAND_VARIABLE)
+    if (operand->kind == OPERAND_VARIABLE_T)
         printf("t%d", operand->var_no);
-    else if (operand->kind == OPERAND_CONSTANT)
-        printf("#%d", operand->value);
+    else if (operand->kind == OPERAND_VARIABLE_V)
+        printf("v%d", operand->var_no);
+    else if (operand->kind == OPERAND_CONSTANT_I)
+        printf("#%d", operand->value_int);
+    else if (operand->kind == OPERAND_CONSTANT_F)
+        printf("#%f", operand->value_flt);
     else if (operand->kind == OPERAND_ADDRESS)
         printf("%d", operand->addr);
 }
@@ -51,18 +78,7 @@ void print_operator(int operator_kind)
         printf(" / ");
 }
 
-static int var_no;
 static int label_no;
-
-void init_var_no()
-{
-    var_no = 1;
-}
-
-int malloc_var_no()
-{
-    return var_no++;
-}
 
 void init_label_no()
 {
@@ -155,7 +171,7 @@ intercode_node_t *create_intercode_node_if_goto(operand_t *if_left, operand_t *i
     return (intercode_node_t *)rtn;
 }
 
-intercode_node_t *create_intercode_return(operand_t *ret)
+intercode_node_t *create_intercode_node_return(operand_t *ret)
 {
     intercode_node_return_t *rtn = malloc(sizeof(intercode_node_return_t));
     rtn->kind = CODE_RETURN;
@@ -172,11 +188,12 @@ intercode_node_t *create_intercode_node_dec(int var_no, int size)
     return (intercode_node_t *)rtn;
 }
 
-intercode_node_t *create_intercode_node_arg(int var_no)
+intercode_node_t *create_intercode_node_arg(int operand_kind, operand_t *arg)
 {
     intercode_node_arg_t *rtn = malloc(sizeof(intercode_node_arg_t));
     rtn->kind = CODE_ARG;
-    rtn->var_no = var_no;
+    rtn->operand_kind = operand_kind;
+    rtn->arg = arg;
     return (intercode_node_t *)rtn;
 }
 
@@ -320,12 +337,13 @@ void print_intercode_node_return(intercode_node_return_t *node)
 
 void print_intercode_node_dec(intercode_node_dec_t *node)
 {
-    printf("DEC t%d [%d]", node->var_no, node->size);
+    printf("DEC v%d %d", node->var_no, node->size);
 }
 
 void print_intercode_node_arg(intercode_node_arg_t *node)
 {
-    printf("ARG t%d", node->var_no);
+    printf("ARG ");
+    print_operand(node->arg);
 }
 
 void print_intercode_node_call(intercode_node_call_t *node)
@@ -336,7 +354,7 @@ void print_intercode_node_call(intercode_node_call_t *node)
 
 void print_intercode_node_param(intercode_node_param_t *node)
 {
-    printf("PARAM t%d", node->var_no);
+    printf("PARAM v%d", node->var_no);
 }
 
 void print_intercode_node_read(intercode_node_read_t *node)
@@ -349,12 +367,45 @@ void print_intercode_node_write(intercode_node_write_t *node)
     printf("WRITE t%d", node->var_no);
 }
 
-
-void print_intercode_list(intercode_list_t *list)
+intercode_line_t *create_intercode_line(intercode_node_t *node)
 {
-    if (list->size == 0) 
+    intercode_line_t *rtn = malloc(sizeof(intercode_line_t));
+    rtn->node = node;
+    rtn->next = NULL;
+    rtn->prev = NULL;
+    return rtn;
+}
+
+void init_intercode_list()
+{
+    init_label_no();
+    intercode_list.size = 0;
+    intercode_list.start = NULL;
+    intercode_list.end = NULL;
+}
+
+void intercode_list_push_back(intercode_node_t *node)
+{
+    assert(node != NULL);
+    intercode_line_t *line = create_intercode_line(node);
+    if (intercode_list.size == 0)
+    {
+        intercode_list.start = line;
+    }
+    else
+    {
+        line->prev = intercode_list.end;
+        intercode_list.end->next = line;
+    }
+    intercode_list.end = line;
+    intercode_list.size++;
+}
+
+void print_intercode_list()
+{
+    if (intercode_list.size == 0)
         return;
-    for(intercode_line_t *itor = list->start; itor != NULL; itor = itor->next)
+    for (intercode_line_t *itor = intercode_list.start; itor != NULL; itor = itor->next)
     {
         print_intercode_node(itor->node);
         printf("\n");

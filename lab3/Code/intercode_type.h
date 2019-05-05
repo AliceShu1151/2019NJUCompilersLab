@@ -1,7 +1,11 @@
+#include "syntax_tree.h"
+
 enum
 {
-    OPERAND_VARIABLE,
-    OPERAND_CONSTANT,
+    OPERAND_VARIABLE_V,
+    OPERAND_VARIABLE_T,
+    OPERAND_CONSTANT_I,
+    OPERAND_CONSTANT_F,
     OPERAND_ADDRESS
 };
 typedef struct operand operand_t;
@@ -10,11 +14,16 @@ struct operand
     int kind;
     union {
         int var_no;
-        int value;
+        int value_int;
+        float value_flt;
         int addr;
     };
 };
-operand_t *create_operand(int operand_kind, int val);
+
+operand_t *create_operand_const_int(int ival);
+operand_t *create_operand_const_float(float fval);
+operand_t *create_operand_const(TreeNode *node);
+operand_t *create_operand_var(int operand_kind, int var_no);
 void print_operand(operand_t *operand);
 void print_operator(int operator_kind);
 
@@ -124,6 +133,7 @@ typedef struct intercode_node_if_goto
 typedef struct intercode_node_return
 {
     int kind;
+    int operand_kind;
     operand_t *ret;
 } intercode_node_return_t;
 
@@ -137,7 +147,8 @@ typedef struct intercode_node_dec
 typedef struct intercode_node_arg
 {
     int kind;
-    int var_no;
+    int operand_kind;
+    operand_t *arg;
 } intercode_node_arg_t;
 
 typedef struct intercode_node_call
@@ -165,11 +176,6 @@ typedef struct intercode_node_write
     int var_no;
 } intercode_node_write_t;
 
-void init_var_no();
-int malloc_var_no();
-
-void init_label_no();
-int malloc_label_no();
 
 intercode_node_t *create_intercode_node_label(int label);
 intercode_node_t *create_intercode_node_func(const char *func_name);
@@ -180,9 +186,9 @@ intercode_node_t *create_intercode_node_dref(operand_t *left, operand_t *right);
 intercode_node_t *create_intercode_node_dref_assign(operand_t *left, operand_t *right);
 intercode_node_t *create_intercode_node_goto(int label);
 intercode_node_t *create_intercode_node_if_goto(operand_t *if_left, operand_t *if_right, int target_label);
-intercode_node_t *create_intercode_return(operand_t *ret);
+intercode_node_t *create_intercode_node_return(operand_t *ret);
 intercode_node_t *create_intercode_node_dec(int var_no, int size);
-intercode_node_t *create_intercode_node_arg(int var_no);
+intercode_node_t *create_intercode_node_arg(int operand_kind, operand_t *arg);
 intercode_node_t *create_intercode_node_call(const char *call_name, operand_t *call_rtn);
 intercode_node_t *create_intercode_node_param(int var_no);
 intercode_node_t *create_intercode_node_read(int var_no);
@@ -223,4 +229,10 @@ struct intercode_list
     intercode_line_t *end;
 };
 
-void print_intercode_list(intercode_list_t *list);
+intercode_line_t *create_intercode_line(intercode_node_t *node);
+
+void init_label_no();
+void init_intercode_list();
+void intercode_list_push_back(intercode_node_t *node);
+
+void print_intercode_list();

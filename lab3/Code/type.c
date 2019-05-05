@@ -81,6 +81,7 @@ symbol_t *create_symbol()
 {
     symbol_t *rtn = malloc(sizeof(symbol_t));
     rtn->is_defined = NOT_DEFINED;
+    rtn->var_no = -1;
     rtn->type = NULL;
     return rtn;
 }
@@ -302,6 +303,22 @@ int type_is_int(type_t *type)
         }
     }
     return 0;
+}
+
+int sizeof_type(type_t *type)
+{
+    if (type->type_kind == TYPE_BASIC) 
+    {   
+        if (((type_basic_t *)type)->int_or_float == TYPE_BASIC_INT)
+            return sizeof(int);
+        else if (((type_basic_t *)type)->int_or_float == TYPE_BASIC_FLOAT) 
+            return sizeof(float);
+    }
+    else if (type->type_kind == TYPE_ARRAY) 
+        return 0;
+    else if (type->type_kind == TYPE_STRUCT) 
+        return 0;
+    return sizeof(int);
 }
 
 void print_field_list(field_list_t *field_list)

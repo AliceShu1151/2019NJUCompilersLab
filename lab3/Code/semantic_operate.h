@@ -6,7 +6,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-
+void init_var_no();
+int malloc_var_no();
 void init_struct_type_table();
 void init_symbol_table();
 

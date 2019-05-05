@@ -44,6 +44,18 @@ int operate_has_semantic_error()
     return semantic_error;   
 }
 
+static int var_no;
+
+void init_var_no()
+{
+    var_no = 1;
+}
+
+int malloc_var_no()
+{
+    return var_no++;
+}
+
 void init_struct_type_table()
 {
     init_type_list(&struct_type_table);
@@ -51,6 +63,7 @@ void init_struct_type_table()
 
 void init_symbol_table()
 {
+    init_var_no();
     symbol_table_env_stack_push();
     init_hash_table(symbol_table.h_table);
 }
@@ -146,6 +159,7 @@ void env_layer_add_node(st_node_t *new_node)
 
 void symbol_table_add(symbol_t *symbol)
 {
+    symbol->var_no = malloc_var_no();
     unsigned int hash_num = hash_pjw(symbol->name) % HASH_TABLE_SIZE;
     symbol_table.h_table[hash_num] = create_st_node(symbol, symbol_table.h_table[hash_num]);
     env_layer_add_node(symbol_table.h_table[hash_num]);

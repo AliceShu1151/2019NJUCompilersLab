@@ -73,6 +73,7 @@ typedef struct symbol
     const char *name;
     int lineno;
     int is_defined;
+    int var_no;
 } symbol_t;
 
 
@@ -139,6 +140,8 @@ int type_type_list_is_equal(type_list_t *type_1, type_list_t *type_2);
 int type_field_list_is_equal(field_list_t *type_1, field_list_t *type_2);
 
 int type_is_int(type_t *type);
+
+int sizeof_type(type_t *type);
 
 void print_field_list(field_list_t *field_list);
 void print_type_list(type_list_t *type_list);

@@ -2,24 +2,6 @@
 
 void semantic_analysis_r(TreeNode *node);
 
-void semantic_extdef(TreeNode *node);
-
-void semantic_extdeclist(TreeNode *node, type_t *type);
-type_t *semantic_specifier(TreeNode *node);
-type_t *semantic_structspecifier(TreeNode *node);
-void semantic_deflist(TreeNode *node, int where, field_list_t *field_list);
-void semantic_declist(TreeNode *node, type_t *type, field_list_t *field_list, int where);
-void semantic_dec(TreeNode *node, type_t *type, field_list_t *field_list, int where);
-void semantic_vardec(TreeNode *node, symbol_t *symbol, type_t *type);
-
-void semantic_fundec(TreeNode *node, type_t *type, symbol_t *symbol, field_list_t *field_list);
-void semantic_varlist(TreeNode *node, field_list_t *field_list);
-void semantic_paramdec(TreeNode *node, field_list_t *field_list);
-
-void semantic_compst(TreeNode *node, type_t *rtn_type);
-void semantic_stmtlist(TreeNode *node, type_t *rtn_type);
-void semantic_stmt(TreeNode *node, type_t *rtn_type);
-void semantic_args(TreeNode *node, type_list_t *type_list);
 type_t *exp_type_check_float(TreeNode *node, int *is_left_value);
 
 type_t *semantic_exp(TreeNode *node, int *is_left_value);
@@ -36,17 +18,7 @@ type_t *exp_type_check_binary_bit(TreeNode *exp_1, TreeNode *exp_2, int *is_left
 type_t *exp_type_check_binary_relop(TreeNode *exp_1, TreeNode *exp_2, int *is_left_value);
 type_t *exp_type_check_binary_arith(TreeNode *exp_1, TreeNode *exp_2, int *is_left_value);
 
-void symbol_table_check_add(symbol_t *symbol);
-void symbol_table_check_add_func(symbol_t *symbol_func, int is_define);
-void symbol_table_check_undefined();
-
-void compst_env_init(symbol_t *symbol, field_list_t *param_list);
-
 void struct_table_check_add(type_struct_t *new_struct, int lineno);
-
-void field_list_check_push_back(field_list_t *field_list, symbol_t *symbol);
-
-void param_list_check_add(symbol_t *symbol, field_list_t *param_list);
 
 void semantic_analysis(TreeNode *root)
 {
@@ -734,7 +706,7 @@ void compst_env_init(symbol_t *symbol, field_list_t *param_list)
     param_list_add_env_layer(param_list);
 }
 
-void symbol_table_check_add(symbol_t *symbol)
+int symbol_table_check_add(symbol_t *symbol)
 {
     if (struct_table_find_name(symbol->name))
     {
@@ -747,15 +719,17 @@ void symbol_table_check_add(symbol_t *symbol)
     else
     {
         symbol_table_add(symbol);
+        return 1;
     }
+    return 0;
 }
 
-void symbol_table_check_add_func(symbol_t *symbol_func, int is_define)
+int  symbol_table_check_add_func(symbol_t *symbol_func, int is_define)
 {
     if (struct_table_find_name(symbol_func->name) != NULL)
     {
         print_semantic_error(3, symbol_func->lineno, symbol_func->name);
-        return;
+        return 0;
     }
     symbol_t *find_in_table = symbol_table_find_name(symbol_func->name);
     if (find_in_table != NULL)
@@ -763,23 +737,26 @@ void symbol_table_check_add_func(symbol_t *symbol_func, int is_define)
         if (find_in_table->is_defined == DEFINED && is_define == DEFINED)
         {
             print_semantic_error(4, symbol_func->lineno, symbol_func->name);
-            return;
+            return 0;
         }
         if (type_is_equal(symbol_func->type, find_in_table->type) == TYPE_NOT_EQUAL)
         {
             print_semantic_error(19, symbol_func->lineno, symbol_func->name);
-            return;
+            return 0;
         }
         if (is_define)
         {
             find_in_table->is_defined = DEFINED;
+            return 1;
         }
     }
     else
     {
         symbol_func->is_defined = is_define;
         symbol_table_add(symbol_func);
+        return 1;
     }
+    return 0;
 }
 
 void struct_table_check_add(type_struct_t *new_struct, int lineno)

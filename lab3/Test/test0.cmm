@@ -6,8 +6,10 @@ int func(int arg1)
 
 int main()
 {
-    int b, d;
-    int x = 1;
-    float y;
+    int y;
+    int x;
+    x = (y = 2);
+    write(x);
+    write(y);
     return x;
 }

@@ -26,6 +26,7 @@ static char *error_msg[20] = {
     "Inconsistent declaration of function \"%s\".\n"
     };
 
+void symbol_table_add_read_write();
 int type_struct_equal_find_name(type_struct_t *struct_type, const char *struct_name);
 void env_layer_add_node(st_node_t *new_node);
 
@@ -56,6 +57,35 @@ int malloc_var_no()
     return var_no++;
 }
 
+static int label_no;
+
+void init_label_no()
+{
+    label_no = 1;
+}
+
+int malloc_label_no()
+{
+    return label_no++;
+}
+
+void symbol_table_add_read_write()
+{
+    type_list_t *param_list = create_type_list();
+    type_t *type_int = (type_t *)create_type_basic(TYPE_BASIC_INT);
+    type_list_push_back(param_list, type_int);
+
+    type_t *type_func_read = (type_t *)create_type_func(type_int, NULL);
+    symbol_t *func_read = create_symbol();
+    init_symbol(func_read, "read", type_func_read, -1, 1);
+    symbol_table_add(func_read);
+
+    type_t *type_func_write = (type_t *)create_type_func(type_int, param_list);
+    symbol_t *func_write = create_symbol();
+    init_symbol(func_write, "write", type_func_write, -1, 1);
+    symbol_table_add(func_write);
+}
+
 void init_struct_type_table()
 {
     init_type_list(&struct_type_table);
@@ -66,6 +96,7 @@ void init_symbol_table()
     init_var_no();
     symbol_table_env_stack_push();
     init_hash_table(symbol_table.h_table);
+    symbol_table_add_read_write();
 }
 
 int type_struct_equal_find_name(type_struct_t *struct_type, const char *struct_name)

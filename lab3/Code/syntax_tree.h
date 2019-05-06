@@ -19,6 +19,7 @@ typedef struct TreeNode {
         const char *idname;
         int ival;
         float fval;
+        const char *relop;
     };
     struct TreeNode *child;
     struct TreeNode *brother;
@@ -37,6 +38,7 @@ int Get_Oct(const char *text);
 TreeNode *Create_IDTermNode(int lineno, const char *tokenname, int tokentype, const char *text);
 TreeNode *Create_FloatTermNode(int lineno, const char *tokenname, int tokentype, float fval);
 TreeNode *Create_IntTermNode(int lineno, const char *tokenname, int tokentype, int ival);
+TreeNode *Create_RelopTermNode(int lineno, const char *tokenname, int tokentype, const char *text);
 
 void Add_Children(TreeNode *parent_node, int bro_num,...);
 

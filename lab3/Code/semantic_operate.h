@@ -8,6 +8,8 @@
 
 void init_var_no();
 int malloc_var_no();
+void init_label_no();
+int malloc_label_no();
 void init_struct_type_table();
 void init_symbol_table();
 

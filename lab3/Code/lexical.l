@@ -54,7 +54,7 @@ type        "int"|"float"
 "]"     {yylval = Create_TermNode(yylineno, "RB", RB); return RB;}
 "{"     {yylval = Create_TermNode(yylineno, "LC", LC); return LC;}
 "}"     {yylval = Create_TermNode(yylineno, "RC", RC); return RC;}
-{relop} {yylval = Create_TermNode(yylineno, "RELOP", RELOP); return RELOP;}
+{relop} {yylval = Create_RelopTermNode(yylineno, "RELOP", RELOP, Get_ID(yytext, yyleng)); return RELOP;}
 "="     {yylval = Create_TermNode(yylineno, "ASSIGNOP", ASSIGNOP); return ASSIGNOP;}
 "+"     {yylval = Create_TermNode(yylineno, "PLUS", PLUS); return PLUS;}
 "-"     {yylval = Create_TermNode(yylineno, "MINUS", MINUS); return MINUS;}

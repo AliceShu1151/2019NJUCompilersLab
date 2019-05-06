@@ -5,3 +5,4 @@
 *.tab.h 
 *.output
 parser
+.vscode

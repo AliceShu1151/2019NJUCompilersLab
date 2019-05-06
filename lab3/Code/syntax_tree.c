@@ -86,6 +86,13 @@ TreeNode *Create_IntTermNode(int lineno, const char *tokenname, int tokentype, i
     return treenode;
 }
 
+TreeNode *Create_RelopTermNode(int lineno, const char *tokenname, int tokentype, const char *text)
+{
+    TreeNode *treenode = Create_TreeNode(lineno, NON_TERM, tokenname, tokentype);
+    treenode->relop = text;
+    return treenode;
+}
+
 
 void Add_Children(TreeNode *parent_node, int bro_num,...) 
 {

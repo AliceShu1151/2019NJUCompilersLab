@@ -78,18 +78,6 @@ void print_operator(int operator_kind)
         printf(" / ");
 }
 
-static int label_no;
-
-void init_label_no()
-{
-    label_no = 1;
-}
-
-int malloc_label_no()
-{
-    return label_no++;
-}
-
 intercode_node_t *create_intercode_node_label(int label)
 {
     intercode_node_label_t *rtn = malloc(sizeof(intercode_node_label_t));
@@ -161,11 +149,12 @@ intercode_node_t *create_intercode_node_goto(int label)
     return (intercode_node_t *)rtn;
 }
 
-intercode_node_t *create_intercode_node_if_goto(operand_t *if_left, operand_t *if_right, int target_label)
+intercode_node_t *create_intercode_node_if_goto(operand_t *if_left, const char *relop, operand_t *if_right, int target_label)
 {
     intercode_node_if_goto_t *rtn = malloc(sizeof(intercode_node_if_goto_t));
     rtn->kind = CODE_IF_GOTO;
     rtn->if_left = if_left;
+    rtn->relop = relop;
     rtn->if_right = if_right;
     rtn->target_label = target_label;
     return (intercode_node_t *)rtn;
@@ -214,19 +203,19 @@ intercode_node_t *create_intercode_node_param(int var_no)
     return (intercode_node_t *)rtn;
 }
 
-intercode_node_t *create_intercode_node_read(int var_no)
+intercode_node_t *create_intercode_node_read(operand_t *var)
 {
     intercode_node_read_t *rtn = malloc(sizeof(intercode_node_read_t));
     rtn->kind = CODE_READ;
-    rtn->var_no = var_no;
+    rtn->var = var;
     return (intercode_node_t *)rtn;
 }
 
-intercode_node_t *create_intercode_node_write(int var_no)
+intercode_node_t *create_intercode_node_write(operand_t *var)
 {
     intercode_node_write_t *rtn = malloc(sizeof(intercode_node_write_t));
     rtn->kind = CODE_WRITE;
-    rtn->var_no = var_no;
+    rtn->var = var;
     return (intercode_node_t *)rtn;
 }
 
@@ -324,9 +313,9 @@ void print_intercode_node_if_goto(intercode_node_if_goto_t *node)
 {
     printf("IF ");
     print_operand(node->if_left);
-    print_operator(node->operator_kind);
+    printf(" %s ", node->relop);
     print_operand(node->if_right);
-    printf("GOTO L%d", node->target_label);
+    printf(" GOTO L%d", node->target_label);
 }
 
 void print_intercode_node_return(intercode_node_return_t *node)
@@ -359,12 +348,14 @@ void print_intercode_node_param(intercode_node_param_t *node)
 
 void print_intercode_node_read(intercode_node_read_t *node)
 {
-    printf("READ t%d", node->var_no);
+    printf("READ ");
+    print_operand(node->var);
 }
 
 void print_intercode_node_write(intercode_node_write_t *node)
 {
-    printf("WRITE t%d", node->var_no);
+    printf("WRITE ");
+    print_operand(node->var);
 }
 
 intercode_line_t *create_intercode_line(intercode_node_t *node)

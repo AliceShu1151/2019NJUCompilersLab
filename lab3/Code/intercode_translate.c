@@ -22,14 +22,18 @@ operand_t *translate_exp_var(TreeNode *node);
 operand_t *translate_exp_func(TreeNode *node, TreeNode *args);
 operand_t *translate_exp_unary_minus(TreeNode *node);
 operand_t *translate_exp_unary_not(TreeNode *node);
-operand_t *translate_exp_struct_dot(TreeNode *exp, TreeNode *dot, TreeNode *id);
-operand_t *translate_exp_array(TreeNode *exp_1, TreeNode *exp_2);
+operand_t *translate_addrexp(TreeNode *exp);
+operand_t *translate_array_struct(TreeNode *node, type_t **type);
+operand_t *translate_exp_struct(TreeNode *exp_1, TreeNode *exp_2, type_t **type);
+operand_t *translate_exp_array(TreeNode *exp_1, TreeNode *exp_2, type_t **type);
 operand_t *translate_exp_assign(TreeNode *exp_1, TreeNode *exp_2);
 operand_t *translate_exp_binary_bit(TreeNode *exp_1, TreeNode *exp_2);
 operand_t *translate_exp_binary_relop(TreeNode *exp_1, TreeNode *exp_2);
 operand_t *translate_exp_binary_arith(const char *operator_name, TreeNode *exp_1, TreeNode *exp_2);
 operand_t *translate_boolexp(TreeNode *boolexp);
+
 void translate_cond(TreeNode *node, int label_true, int label_false);
+operand_t *dref_address(operand_t *address);
 
 void intercode_translate(TreeNode *root)
 {
@@ -207,9 +211,9 @@ void translate_dec(TreeNode *node, type_t *type, field_list_t *field_list, int w
     else if (where == STATEMENT)
     {
         int symbol_is_add = symbol_table_check_add(symbol);
-        if (symbol_is_add)
+        if (symbol_is_add && (symbol->type->type_kind == TYPE_ARRAY || symbol->type->type_kind == TYPE_STRUCT))
         {
-            intercode_node_t *dec = create_intercode_node_dec(symbol->var_no, sizeof_type(type));
+            intercode_node_t *dec = create_intercode_node_dec(symbol->var_no, sizeof_type(symbol->type));
             intercode_list_push_back(dec);
         }
     }
@@ -222,6 +226,8 @@ void translate_dec(TreeNode *node, type_t *type, field_list_t *field_list, int w
     {
         operand_t *left = create_operand_var(OPERAND_VARIABLE_V, symbol->var_no);
         operand_t *right = translate_exp(assignop->brother);
+        right = dref_address(right);
+        assert(left->kind != OPERAND_ADDRESS_T && left->kind != OPERAND_ADDRESS_V);
         intercode_node_t *assign = create_intercode_node_assign(left, right);
         intercode_list_push_back(assign);
     }
@@ -254,6 +260,7 @@ void translate_stmt(TreeNode *node)
     else if (strcmp(type_stmt->tokenname, "RETURN") == 0)
     {
         operand_t *ret = translate_exp(type_stmt->brother);
+        ret = dref_address(ret);
         intercode_node_t *rtn = create_intercode_node_return(ret);
         intercode_list_push_back(rtn);
     }
@@ -365,9 +372,9 @@ operand_t *translate_exp(TreeNode *node)
         child_2 = child_1->brother;
         child_3 = child_2->brother;
         if (strcmp(child_2->tokenname, "DOT") == 0)
-            return translate_exp_struct_dot(child_1, child_2, child_3);
+            return translate_addrexp(node);
         else if (strcmp(child_2->tokenname, "LB") == 0)
-            return translate_exp_array(child_1, child_3);
+            return translate_addrexp(node);
         else if (strcmp(child_2->tokenname, "ASSIGNOP") == 0)
             return translate_exp_assign(child_1, child_3);
         else if (strcmp(child_2->tokenname, "AND") == 0 || strcmp(child_2->tokenname, "OR") == 0 ||
@@ -397,7 +404,16 @@ operand_t *translate_exp_var(TreeNode *node)
 {
     assert(strcmp(node->tokenname, "ID") == 0);
     symbol_t *symbol = symbol_table_find_name(node->idname);
-    return create_operand_var(OPERAND_VARIABLE_V, symbol->var_no);
+
+    if ((symbol->type->type_kind == TYPE_ARRAY || symbol->type->type_kind == TYPE_STRUCT) &&
+        !symbol->is_param)
+    {
+        operand_t *addr = create_operand_var(OPERAND_ADDRESS_T, malloc_var_no());
+        intercode_node_t *ref = create_intercode_node_ref(addr, create_operand_var(OPERAND_VARIABLE_V, symbol->var_no));
+        intercode_list_push_back(ref);
+        return addr;
+    }
+    return create_operand_var(OPERAND_VARIABLE_V, symbol->var_no);;  
 }
 
 operand_t *translate_exp_func(TreeNode *node, TreeNode *args)
@@ -406,13 +422,13 @@ operand_t *translate_exp_func(TreeNode *node, TreeNode *args)
     symbol_t *symbol = symbol_table_find_name(node->idname);
     operand_t *var = translate_args(args);
     operand_t *ret = create_operand_var(OPERAND_VARIABLE_T, malloc_var_no());
-    if (strcmp(node->idname, "write") == 0) 
+    if (strcmp(node->idname, "write") == 0)
     {
         intercode_node_t *write = create_intercode_node_write(var);
         intercode_list_push_back(write);
         return var;
     }
-    else if (strcmp(node->idname, "read") == 0) 
+    else if (strcmp(node->idname, "read") == 0)
     {
         intercode_node_t *read = create_intercode_node_read(ret);
         intercode_list_push_back(read);
@@ -428,6 +444,7 @@ operand_t *translate_exp_unary_minus(TreeNode *node)
 {
     assert(strcmp(node->tokenname, "MINUS") == 0);
     operand_t *exp_operand = translate_exp(node->brother);
+    exp_operand = dref_address(exp_operand);
     operand_t *zero = create_operand_const_int(0);
     operand_t *target = create_operand_var(OPERAND_VARIABLE_T, malloc_var_no());
     intercode_node_t *minus = create_intercode_node_binary(OPERATOR_MIN, target, zero, exp_operand);
@@ -486,7 +503,9 @@ void translate_cond(TreeNode *node, int label_true, int label_false)
         else if (strcmp(child_2->tokenname, "RELOP") == 0)
         {
             operand_t *exp_1 = translate_exp(child_1);
+            exp_1 = dref_address(exp_1);
             operand_t *exp_2 = translate_exp(child_3);
+            exp_2 = dref_address(exp_2);
             intercode_node_t *relop = create_intercode_node_if_goto(exp_1, child_2->relop, exp_2, label_true);
             intercode_list_push_back(relop);
             intercode_node_t *goto_false = create_intercode_node_goto(label_false);
@@ -496,6 +515,7 @@ void translate_cond(TreeNode *node, int label_true, int label_false)
     else
     {
         operand_t *cond = translate_exp(node);
+        cond = dref_address(cond);
         operand_t *zero = create_operand_const_int(0);
         intercode_node_t *relop = create_intercode_node_if_goto(cond, "!=", zero, label_true);
         intercode_list_push_back(relop);
@@ -504,18 +524,72 @@ void translate_cond(TreeNode *node, int label_true, int label_false)
     }
 }
 
-operand_t *translate_exp_unary_not(TreeNode *node)
+operand_t *translate_addrexp(TreeNode *addrexp)
 {
+    return translate_array_struct(addrexp, NULL);
+}
+
+operand_t *translate_array_struct(TreeNode *node, type_t **type)
+{
+    TreeNode *child_1 = node->child;
+    TreeNode *child_2, *child_3;
+    if (strcmp(child_1->tokenname, "Exp") == 0)
+    {
+        child_2 = child_1->brother;
+        child_3 = child_2->brother;
+        if (strcmp(child_2->tokenname, "DOT") == 0)
+            return translate_exp_struct(child_1, child_3, type);
+        else if (strcmp(child_2->tokenname, "LB") == 0)
+            return translate_exp_array(child_1, child_3, type);
+    }
+    else if (strcmp(child_1->tokenname, "ID") == 0)
+    {
+        symbol_t *symbol = symbol_table_find_name(child_1->idname);
+        *type = symbol->type;
+        operand_t *addr;
+        if (symbol->is_param)
+        {
+            addr = create_operand_var(OPERAND_ADDRESS_V, symbol->var_no);
+        }
+        else
+        {
+            addr = create_operand_var(OPERAND_ADDRESS_T, malloc_var_no());
+            intercode_node_t *ref = create_intercode_node_ref(addr, create_operand_var(OPERAND_VARIABLE_V, symbol->var_no));
+            intercode_list_push_back(ref);
+        }
+        return addr;
+    }
+    assert(0);
     return NULL;
 }
 
-operand_t *translate_exp_struct_dot(TreeNode *exp, TreeNode *dot, TreeNode *id)
+operand_t *translate_exp_array(TreeNode *exp_1, TreeNode *exp_2, type_t **rettype)
 {
+    type_t *type, *subtype;
+    operand_t *left = translate_array_struct(exp_1, &type);
+    operand_t *right = translate_exp(exp_2);
+    operand_t *dref_right = dref_address(right);
+    operand_t *target = create_operand_var(OPERAND_ADDRESS_T, malloc_var_no());
+    assert(type->type_kind == TYPE_ARRAY);
+    subtype = ((type_array_t *)type)->extend;
+    if (rettype)
+    {
+        *rettype = subtype;
+    }
 
-    return NULL;
+    operand_t *offset = create_operand_var(OPERAND_VARIABLE_T, malloc_var_no());
+
+    operand_t *size = create_operand_const_int(sizeof_type(subtype));
+    intercode_node_t *star = create_intercode_node_binary(OPERATOR_STAR, offset, dref_right, size);
+    intercode_list_push_back(star);
+
+    intercode_node_t *plus = create_intercode_node_binary(OPERATOR_PLS, target, left, offset);
+    intercode_list_push_back(plus);
+
+    return target;
 }
 
-operand_t *translate_exp_array(TreeNode *exp_1, TreeNode *exp_2)
+operand_t *translate_exp_struct(TreeNode *exp_1, TreeNode *exp_2, type_t **type)
 {
 
     return NULL;
@@ -525,7 +599,15 @@ operand_t *translate_exp_assign(TreeNode *exp_1, TreeNode *exp_2)
 {
     operand_t *left = translate_exp(exp_1);
     operand_t *right = translate_exp(exp_2);
-    intercode_node_t *assign = create_intercode_node_assign(left, right);
+    right = dref_address(right);
+    intercode_node_t *assign;
+    if (left->kind == OPERAND_ADDRESS_T || left->kind == OPERAND_ADDRESS_V)
+    {
+        assign = create_intercode_node_dref_assign(left, right);
+        left->kind = OPERAND_VARIABLE_T;
+    }
+    else
+        assign = create_intercode_node_assign(left, right);
     intercode_list_push_back(assign);
     return left;
 }
@@ -545,7 +627,10 @@ operand_t *translate_exp_binary_relop(TreeNode *exp_1, TreeNode *exp_2)
 operand_t *translate_exp_binary_arith(const char *operator_name, TreeNode *exp_1, TreeNode *exp_2)
 {
     operand_t *left = translate_exp(exp_1);
+    left = dref_address(left);
     operand_t *right = translate_exp(exp_2);
+    right = dref_address(right);
+
     operand_t *target = create_operand_var(OPERAND_VARIABLE_T, malloc_var_no());
     int operator_kind;
     if (strcmp(operator_name, "PLUS") == 0)
@@ -559,4 +644,20 @@ operand_t *translate_exp_binary_arith(const char *operator_name, TreeNode *exp_1
     intercode_node_t *binary = create_intercode_node_binary(operator_kind, target, left, right);
     intercode_list_push_back(binary);
     return target;
+}
+
+operand_t *dref_address(operand_t *address)
+{
+    operand_t *dref_right;
+    if (address->kind == OPERAND_ADDRESS_T || address->kind == OPERAND_ADDRESS_V)
+    {
+        dref_right = create_operand_var(OPERAND_VARIABLE_T, malloc_var_no());
+        intercode_node_t *dref = create_intercode_node_dref(dref_right, address);
+        intercode_list_push_back(dref);
+    }
+    else
+    {
+        dref_right = address;
+    }
+    return dref_right;
 }

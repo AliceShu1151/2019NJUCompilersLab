@@ -288,6 +288,7 @@ void param_list_add_env_layer(field_list_t *param_list)
     {
         symbol_t *symbol = create_symbol();
         init_symbol(symbol, itor->name, itor->type, itor->lineno, DEFINED);
+        symbol->is_param = 1;
         symbol_table_add(symbol);
     }
 }

@@ -81,6 +81,7 @@ symbol_t *create_symbol()
 {
     symbol_t *rtn = malloc(sizeof(symbol_t));
     rtn->is_defined = NOT_DEFINED;
+    rtn->is_param = 0;
     rtn->var_no = -1;
     rtn->type = NULL;
     return rtn;
@@ -315,7 +316,9 @@ int sizeof_type(type_t *type)
             return sizeof(float);
     }
     else if (type->type_kind == TYPE_ARRAY) 
-        return 0;
+    {
+        return ((type_array_t *)type)->size * sizeof_type(((type_array_t *)type)->extend);
+    }
     else if (type->type_kind == TYPE_STRUCT) 
         return 0;
     return sizeof(int);

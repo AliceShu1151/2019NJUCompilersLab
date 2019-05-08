@@ -1,15 +1,15 @@
 
-int func(int arg1)
+int func(int a[10])
 {
-    return arg1;
+    int x = a[2];
+    return x;
 }
 
 int main()
 {
-    int y;
-    int x;
-    x = (y = 2);
-    write(x);
-    write(y);
-    return x;
+    int b, c;
+    int a[4];
+    a[2] = 0;
+    c = func(a);
+    return b;
 }

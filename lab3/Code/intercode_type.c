@@ -50,8 +50,10 @@ void print_operand(operand_t *operand)
         printf("#%d", operand->value_int);
     else if (operand->kind == OPERAND_CONSTANT_F)
         printf("#%f", operand->value_flt);
-    else if (operand->kind == OPERAND_ADDRESS)
-        printf("%d", operand->addr);
+    else if (operand->kind == OPERAND_ADDRESS_T)
+        printf("t%d", operand->var_no);
+    else if (operand->kind == OPERAND_ADDRESS_V)
+        printf("v%d", operand->var_no);
 }
 
 void print_operator(int operator_kind)

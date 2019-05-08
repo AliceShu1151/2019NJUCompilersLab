@@ -73,6 +73,7 @@ typedef struct symbol
     const char *name;
     int lineno;
     int is_defined;
+    int is_param;
     int var_no;
 } symbol_t;
 

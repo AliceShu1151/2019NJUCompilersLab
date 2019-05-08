@@ -6,7 +6,8 @@ enum
     OPERAND_VARIABLE_T,
     OPERAND_CONSTANT_I,
     OPERAND_CONSTANT_F,
-    OPERAND_ADDRESS
+    OPERAND_ADDRESS_V,
+    OPERAND_ADDRESS_T
 };
 typedef struct operand operand_t;
 struct operand
@@ -16,7 +17,6 @@ struct operand
         int var_no;
         int value_int;
         float value_flt;
-        int addr;
     };
 };
 

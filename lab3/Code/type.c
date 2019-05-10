@@ -320,7 +320,14 @@ int sizeof_type(type_t *type)
         return ((type_array_t *)type)->size * sizeof_type(((type_array_t *)type)->extend);
     }
     else if (type->type_kind == TYPE_STRUCT) 
-        return 0;
+    {
+        int ret= 0;
+        for (field_node_t *itor = ((type_struct_t *)type)->struct_fields->start; itor != NULL; itor = itor->next)
+        {
+            ret += sizeof_type(itor->type);
+        }
+        return ret;
+    }
     return sizeof(int);
 }
 

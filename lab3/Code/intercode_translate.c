@@ -27,8 +27,6 @@ operand_t *translate_array_struct(TreeNode *node, type_t **type);
 operand_t *translate_exp_struct(TreeNode *exp_1, TreeNode *exp_2, type_t **type);
 operand_t *translate_exp_array(TreeNode *exp_1, TreeNode *exp_2, type_t **type);
 operand_t *translate_exp_assign(TreeNode *exp_1, TreeNode *exp_2);
-operand_t *translate_exp_binary_bit(TreeNode *exp_1, TreeNode *exp_2);
-operand_t *translate_exp_binary_relop(TreeNode *exp_1, TreeNode *exp_2);
 operand_t *translate_exp_binary_arith(const char *operator_name, TreeNode *exp_1, TreeNode *exp_2);
 operand_t *translate_boolexp(TreeNode *boolexp);
 
@@ -330,6 +328,7 @@ operand_t *translate_args(TreeNode *node)
     TreeNode *exp = node->child;
 
     operand_t *exp_operand = translate_exp(exp);
+    exp_operand = dref_address(exp_operand);
     if (exp_operand == NULL)
         return NULL;
     if (exp->brother != NULL)
@@ -548,9 +547,7 @@ operand_t *translate_array_struct(TreeNode *node, type_t **type)
         *type = symbol->type;
         operand_t *addr;
         if (symbol->is_param)
-        {
             addr = create_operand_var(OPERAND_ADDRESS_V, symbol->var_no);
-        }
         else
         {
             addr = create_operand_var(OPERAND_ADDRESS_T, malloc_var_no());
@@ -589,10 +586,33 @@ operand_t *translate_exp_array(TreeNode *exp_1, TreeNode *exp_2, type_t **rettyp
     return target;
 }
 
-operand_t *translate_exp_struct(TreeNode *exp_1, TreeNode *exp_2, type_t **type)
+operand_t *translate_exp_struct(TreeNode *exp_1, TreeNode *exp_2, type_t **rettype)
 {
+    type_t *type;
+    operand_t *left = translate_array_struct(exp_1, &type);
+    assert(type->type_kind == TYPE_STRUCT);
+    int offset_size = 0;
+    for (field_node_t *itor = ((type_struct_t *)type)->struct_fields->start; itor != NULL; itor = itor->next)
+    {
+        if (strcmp(itor->name, exp_2->idname) == 0)
+        {
+            if (rettype)
+            {
+                *rettype = itor->type;
+            }
+            break;
+        }
+        offset_size += sizeof_type(itor->type);
+    }
+    
+    operand_t *target = create_operand_var(OPERAND_ADDRESS_T, malloc_var_no());
 
-    return NULL;
+    operand_t *offset = create_operand_const_int(offset_size);
+
+    intercode_node_t *plus = create_intercode_node_binary(OPERATOR_PLS, target, left, offset);
+    intercode_list_push_back(plus);
+
+    return target;
 }
 
 operand_t *translate_exp_assign(TreeNode *exp_1, TreeNode *exp_2)
@@ -610,18 +630,6 @@ operand_t *translate_exp_assign(TreeNode *exp_1, TreeNode *exp_2)
         assign = create_intercode_node_assign(left, right);
     intercode_list_push_back(assign);
     return left;
-}
-
-operand_t *translate_exp_binary_bit(TreeNode *exp_1, TreeNode *exp_2)
-{
-
-    return NULL;
-}
-
-operand_t *translate_exp_binary_relop(TreeNode *exp_1, TreeNode *exp_2)
-{
-
-    return NULL;
 }
 
 operand_t *translate_exp_binary_arith(const char *operator_name, TreeNode *exp_1, TreeNode *exp_2)

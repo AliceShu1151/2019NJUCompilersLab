@@ -1,15 +1,17 @@
-
-int func(int a[10])
+struct t
 {
-    int x = a[2];
-    return x;
-}
+    int t_1[100];
+};
 
 int main()
 {
-    int b, c;
-    int a[4];
-    a[2] = 0;
-    c = func(a);
-    return b;
+    struct t s;
+    int i = 0;
+    while (i < 100)
+    {
+        s.t_1[i] = i;
+        write(s.t_1[i]);
+        i = i + 1;
+    }
+    return 0;
 }

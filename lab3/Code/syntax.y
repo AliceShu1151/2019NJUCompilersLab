@@ -39,7 +39,6 @@ Program :   ExtDefList  {
                 $$ = Create_NonTermNode(@$.first_line, "Program");
                 Add_Children($$, 1, $1);
                 if (PRINT_TREE) {
-                    //Print_Tree($$);
                     semantic_analysis($$);
                     if (!has_semantic_error()) {
                         intercode_translate($$);

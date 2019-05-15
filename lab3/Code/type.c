@@ -1,4 +1,5 @@
 #include "type.h"
+#include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -256,6 +257,8 @@ int type_func_is_equal(type_func_t *type_1, type_func_t *type_2)
 }
 int type_type_list_is_equal(type_list_t *type_1, type_list_t *type_2)
 {
+    assert(type_1);
+    assert(type_2);
     if (type_1->size != type_2->size)
     {
         return TYPE_NOT_EQUAL;

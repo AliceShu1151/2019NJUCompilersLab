@@ -360,6 +360,24 @@ void print_intercode_node_write(intercode_node_write_t *node)
     print_operand(node->var);
 }
 
+const char *relop_not(const char *relop)
+{
+    if (strcmp(relop, ">") == 0)
+        return "<=";
+    else if (strcmp(relop, ">=") == 0)
+        return "<";
+    else if (strcmp(relop, "<") == 0)
+        return ">=";
+    else if (strcmp(relop, "<=") == 0)
+        return ">";
+    else if (strcmp(relop, "==") == 0)
+        return "!=";
+    else if (strcmp(relop, "!=") == 0)
+        return "==";
+    assert(0);
+    return "";    
+}
+
 intercode_line_t *create_intercode_line(intercode_node_t *node)
 {
     intercode_line_t *rtn = malloc(sizeof(intercode_line_t));
@@ -392,6 +410,46 @@ void intercode_list_push_back(intercode_node_t *node)
     }
     intercode_list.end = line;
     intercode_list.size++;
+    if (intercode_list.end->node->kind == CODE_ASSIGN)
+    {
+        intercode_list_check_assign();
+    }
+    
+}
+
+void intercode_list_check_assign()
+{
+    assert(intercode_list.end->node->kind == CODE_ASSIGN);
+    intercode_node_assign_t *curr = (intercode_node_assign_t *)intercode_list.end->node;
+    operand_t *t_val_1;
+    operand_t *t_val_2 = ((intercode_node_assign_t *)intercode_list.end->node)->right;
+    if (intercode_list.end->prev->node->kind == CODE_ASSIGN)
+        t_val_1 = ((intercode_node_assign_t *)intercode_list.end->prev->node)->left;
+    else if (intercode_list.end->prev->node->kind == CODE_OPERATOR)
+        t_val_1 = ((intercode_node_binary_t *)intercode_list.end->prev->node)->target;
+    else if (intercode_list.end->prev->node->kind == CODE_CALL)
+        t_val_1 = ((intercode_node_call_t *)intercode_list.end->prev->node)->call_rtn;
+    if (t_val_1->kind == OPERAND_VARIABLE_T && t_val_2->kind == OPERAND_VARIABLE_T && t_val_1->var_no == t_val_2->var_no)
+    {
+        if (intercode_list.end->prev->node->kind == CODE_ASSIGN)
+        {
+            intercode_node_assign_t *prev = (intercode_node_assign_t *)intercode_list.end->prev->node;
+            prev->left = curr->left;
+        }
+        else if (intercode_list.end->prev->node->kind == CODE_OPERATOR)
+        {
+            intercode_node_binary_t *prev = (intercode_node_binary_t *)intercode_list.end->prev->node;
+            prev->target = curr->left;
+        }
+        else if (intercode_list.end->prev->node->kind == CODE_CALL)
+        {
+            intercode_node_call_t *prev = (intercode_node_call_t *)intercode_list.end->prev->node;
+            prev->call_rtn = curr->left;
+        }
+        intercode_list.end = intercode_list.end->prev;
+        intercode_list.end->next = NULL;
+        intercode_list.size = intercode_list.size - 1;
+    }
 }
 
 void print_intercode_list()

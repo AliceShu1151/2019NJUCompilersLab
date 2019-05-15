@@ -265,17 +265,14 @@ void translate_stmt(TreeNode *node)
     else if (strcmp(type_stmt->tokenname, "IF") == 0)
     {
         int label_1 = malloc_label_no();
-        int label_2 = malloc_label_no();
         TreeNode *exp = type_stmt->brother->brother;
-        translate_cond(exp, label_1, label_2);
-        intercode_node_t *label_true = create_intercode_node_label(label_1);
-        intercode_list_push_back(label_true);
+        translate_cond(exp, FALL, label_1);
 
         TreeNode *stmt = exp->brother->brother;
         translate_stmt(stmt);
         if (stmt->brother == NULL)
         {
-            intercode_node_t *label_flase = create_intercode_node_label(label_2);
+            intercode_node_t *label_flase = create_intercode_node_label(label_1);
             intercode_list_push_back(label_flase);
         }
         if (stmt->brother != NULL)
@@ -283,7 +280,7 @@ void translate_stmt(TreeNode *node)
             int label_3 = malloc_label_no();
             intercode_node_t *goto_else = create_intercode_node_goto(label_3);
             intercode_list_push_back(goto_else);
-            intercode_node_t *label_flase = create_intercode_node_label(label_2);
+            intercode_node_t *label_flase = create_intercode_node_label(label_1);
             intercode_list_push_back(label_flase);
 
             stmt = stmt->brother->brother;
@@ -296,16 +293,12 @@ void translate_stmt(TreeNode *node)
     {
         int label_1 = malloc_label_no();
         int label_2 = malloc_label_no();
-        int label_3 = malloc_label_no();
 
         intercode_node_t *label_while = create_intercode_node_label(label_1);
         intercode_list_push_back(label_while);
 
         TreeNode *exp = type_stmt->brother->brother;
-        translate_cond(exp, label_2, label_3);
-
-        intercode_node_t *label_do = create_intercode_node_label(label_2);
-        intercode_list_push_back(label_do);
+        translate_cond(exp, FALL, label_2);
 
         TreeNode *stmt = exp->brother->brother;
         translate_stmt(stmt);
@@ -313,7 +306,7 @@ void translate_stmt(TreeNode *node)
         intercode_node_t *goto_while = create_intercode_node_goto(label_1);
         intercode_list_push_back(goto_while);
 
-        intercode_node_t *label_out = create_intercode_node_label(label_3);
+        intercode_node_t *label_out = create_intercode_node_label(label_2);
         intercode_list_push_back(label_out);
     }
 }
@@ -412,7 +405,8 @@ operand_t *translate_exp_var(TreeNode *node)
         intercode_list_push_back(ref);
         return addr;
     }
-    return create_operand_var(OPERAND_VARIABLE_V, symbol->var_no);;  
+    return create_operand_var(OPERAND_VARIABLE_V, symbol->var_no);
+    ;
 }
 
 operand_t *translate_exp_func(TreeNode *node, TreeNode *args)
@@ -444,6 +438,16 @@ operand_t *translate_exp_unary_minus(TreeNode *node)
     assert(strcmp(node->tokenname, "MINUS") == 0);
     operand_t *exp_operand = translate_exp(node->brother);
     exp_operand = dref_address(exp_operand);
+    if (exp_operand->kind == OPERAND_CONSTANT_I)
+    {
+        exp_operand->value_int = 0 - exp_operand->value_int;
+        return exp_operand;
+    }
+    if (exp_operand->kind == OPERAND_CONSTANT_F)
+    {
+        exp_operand->value_flt = 0 - exp_operand->value_flt;
+        return exp_operand;
+    }
     operand_t *zero = create_operand_const_int(0);
     operand_t *target = create_operand_var(OPERAND_VARIABLE_T, malloc_var_no());
     intercode_node_t *minus = create_intercode_node_binary(OPERATOR_MIN, target, zero, exp_operand);
@@ -454,18 +458,15 @@ operand_t *translate_exp_unary_minus(TreeNode *node)
 operand_t *translate_boolexp(TreeNode *boolexp)
 {
     int label_1 = malloc_label_no();
-    int label_2 = malloc_label_no();
     operand_t *place = create_operand_var(OPERAND_VARIABLE_T, malloc_var_no());
     operand_t *zero = create_operand_const_int(0);
     operand_t *one = create_operand_const_int(1);
     intercode_node_t *place_0 = create_intercode_node_assign(place, zero);
     intercode_list_push_back(place_0);
-    translate_cond(boolexp, label_1, label_2);
-    intercode_node_t *label_true = create_intercode_node_label(label_1);
-    intercode_list_push_back(label_true);
+    translate_cond(boolexp, FALL, label_1);
     intercode_node_t *place_1 = create_intercode_node_assign(place, one);
     intercode_list_push_back(place_1);
-    intercode_node_t *label_false = create_intercode_node_label(label_2);
+    intercode_node_t *label_false = create_intercode_node_label(label_1);
     intercode_list_push_back(label_false);
     return place;
 }
@@ -477,49 +478,91 @@ void translate_cond(TreeNode *node, int label_true, int label_false)
 
     if (strcmp(child_1->tokenname, "NOT") == 0)
     {
-        return translate_cond(node, label_false, label_true);
+        translate_cond(child_1->brother, label_false, label_true);
+        return;
     }
-    else if (strcmp(child_1->tokenname, "Exp") == 0)
+    if (strcmp(child_1->tokenname, "Exp") == 0)
     {
         child_2 = child_1->brother;
         child_3 = child_2->brother;
         if (strcmp(child_2->tokenname, "AND") == 0)
         {
-            int label_1 = malloc_label_no();
-            translate_cond(child_1, label_1, label_false);
-            intercode_node_t *label = create_intercode_node_label(label_1);
-            intercode_list_push_back(label);
+            int label_1;
+            if (label_false == FALL)
+                label_1 = malloc_label_no();
+            else
+                label_1 = label_false;
+            translate_cond(child_1, FALL, label_1);
             translate_cond(child_3, label_true, label_false);
+            if (label_false == FALL)
+            {
+                intercode_node_t *label = create_intercode_node_label(label_1);
+                intercode_list_push_back(label);
+            }
+            return;
         }
-        else if (strcmp(child_2->tokenname, "OR") == 0)
+        if (strcmp(child_2->tokenname, "OR") == 0)
         {
-            int label_1 = malloc_label_no();
-            translate_cond(child_1, label_true, label_1);
-            intercode_node_t *label = create_intercode_node_label(label_1);
-            intercode_list_push_back(label);
+            int label_1;
+            if (label_true != FALL)
+                label_1 = label_true;
+            else
+                label_1 = malloc_label_no();
+            translate_cond(child_1, label_1, FALL);
             translate_cond(child_3, label_true, label_false);
+            if (label_true == FALL)
+            {
+                intercode_node_t *label = create_intercode_node_label(label_1);
+                intercode_list_push_back(label);
+            }
+            return;
         }
-        else if (strcmp(child_2->tokenname, "RELOP") == 0)
+        if (strcmp(child_2->tokenname, "RELOP") == 0)
         {
             operand_t *exp_1 = translate_exp(child_1);
             exp_1 = dref_address(exp_1);
             operand_t *exp_2 = translate_exp(child_3);
             exp_2 = dref_address(exp_2);
-            intercode_node_t *relop = create_intercode_node_if_goto(exp_1, child_2->relop, exp_2, label_true);
-            intercode_list_push_back(relop);
-            intercode_node_t *goto_false = create_intercode_node_goto(label_false);
-            intercode_list_push_back(goto_false);
+            if (label_true != FALL && label_false != FALL)
+            {
+                intercode_node_t *relop = create_intercode_node_if_goto(exp_1, child_2->relop, exp_2, label_true);
+                intercode_list_push_back(relop);
+                intercode_node_t *goto_false = create_intercode_node_goto(label_false);
+                intercode_list_push_back(goto_false);
+            }
+            else if (label_true != FALL)
+            {
+                intercode_node_t *relop = create_intercode_node_if_goto(exp_1, child_2->relop, exp_2, label_true);
+                intercode_list_push_back(relop);
+            }
+            else if (label_false != FALL)
+            {
+                intercode_node_t *relop = create_intercode_node_if_goto(exp_1, relop_not(child_2->relop), exp_2, label_false);
+                intercode_list_push_back(relop);
+            }
+            return;
         }
     }
-    else
+    operand_t *cond = translate_exp(node);
+    cond = dref_address(cond);
+    operand_t *zero = create_operand_const_int(0);
+
+    if (label_true != FALL && label_false != FALL)
     {
-        operand_t *cond = translate_exp(node);
-        cond = dref_address(cond);
-        operand_t *zero = create_operand_const_int(0);
         intercode_node_t *relop = create_intercode_node_if_goto(cond, "!=", zero, label_true);
         intercode_list_push_back(relop);
         intercode_node_t *goto_false = create_intercode_node_goto(label_false);
         intercode_list_push_back(goto_false);
+    }
+    else if (label_true != FALL)
+    {
+        intercode_node_t *relop = create_intercode_node_if_goto(cond, "!=", zero, label_true);
+        intercode_list_push_back(relop);
+    }
+    else if (label_false != FALL)
+    {
+        intercode_node_t *relop = create_intercode_node_if_goto(cond, "==", zero, label_false);
+        intercode_list_push_back(relop);
     }
 }
 
@@ -604,7 +647,7 @@ operand_t *translate_exp_struct(TreeNode *exp_1, TreeNode *exp_2, type_t **retty
         }
         offset_size += sizeof_type(itor->type);
     }
-    
+
     operand_t *target = create_operand_var(OPERAND_ADDRESS_T, malloc_var_no());
 
     operand_t *offset = create_operand_const_int(offset_size);

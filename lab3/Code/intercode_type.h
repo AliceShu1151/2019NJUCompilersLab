@@ -213,6 +213,7 @@ void print_intercode_node_param(intercode_node_param_t *node);
 void print_intercode_node_read(intercode_node_read_t *node);
 void print_intercode_node_write(intercode_node_write_t *node);
 
+const char *relop_not(const char *relop);
 
 typedef struct intercode_line intercode_line_t;
 struct intercode_line
@@ -235,5 +236,6 @@ intercode_line_t *create_intercode_line(intercode_node_t *node);
 void init_label_no();
 void init_intercode_list();
 void intercode_list_push_back(intercode_node_t *node);
+void intercode_list_check_assign();
 
 void print_intercode_list();

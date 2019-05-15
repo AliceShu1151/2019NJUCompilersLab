@@ -75,7 +75,7 @@ void symbol_table_add_read_write()
     type_t *type_int = (type_t *)create_type_basic(TYPE_BASIC_INT);
     type_list_push_back(param_list, type_int);
 
-    type_t *type_func_read = (type_t *)create_type_func(type_int, NULL);
+    type_t *type_func_read = (type_t *)create_type_func(type_int, create_type_list());
     symbol_t *func_read = create_symbol();
     init_symbol(func_read, "read", type_func_read, -1, 1);
     symbol_table_add(func_read);

@@ -5,13 +5,7 @@ struct t
 
 int main()
 {
-    struct t s;
-    int i = 0;
-    while (i < 100)
-    {
-        s.t_1[i] = i;
-        write(s.t_1[i]);
-        i = i + 1;
-    }
-    return 0;
+    int n = 0;
+    int k = n + 1;
+    n = k;
 }

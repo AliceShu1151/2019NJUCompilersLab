@@ -1,7 +1,8 @@
 %{
 #include "syntax_tree.h"
 //#include "semantic_analysis.h"
-#include "intercode_translate.h"
+//#include "intercode_translate.h"
+#include "MIPS32_translate.h"
 #define YYSTYPE TreeNode*
 #define YYERROR_VERBOSE 1
 #include "lex.yy.c"
@@ -42,6 +43,7 @@ Program :   ExtDefList  {
                     semantic_analysis($$);
                     if (!has_semantic_error()) {
                         intercode_translate($$);
+                        MIPS32_translate();
                     }
                 }
             }

@@ -9,12 +9,12 @@ enum
     MIPS_OPERAND_STRING
 };
 
-typedef struct MIPS_operand_reg MIPS_operand_reg_t;
-struct MIPS_operand_reg
+typedef struct MIPS_operand MIPS_operand_t;
+struct MIPS_operand
 {
     int kind;
     union {
-        int const_num;
+        int ival;
         int label;
         const char *reg_type;
         const char *content;
@@ -22,6 +22,13 @@ struct MIPS_operand_reg
     int reg_no;
     int reg_offset;
 };
+
+MIPS_operand_t *create_MIPS_operand_const(int ival);
+MIPS_operand_t *create_MIPS_operand_label(int label);
+MIPS_operand_t *create_MIPS_operand_reg(const char *reg_type, int reg_no);
+MIPS_operand_t *create_MIPS_operand_reg_offset(const char *reg_type, int reg_no, int reg_offset);
+MIPS_operand_t *create_MIPS_operand_string(const char *content);
+void print_MIPS_operand(MIPS_operand_t *operand);
 
 enum
 {
@@ -38,9 +45,11 @@ enum
     MIPS_LW,
     MIPS_SW,
     MIPS_J,
-    MIPS_JAL,
+    MIPS_JAR,
     MIPS_JR,
-    MIPS_B
+    MIPS_B,
+    MIPS_CALL,
+    MIPS_FUNC
 };
 enum
 {
@@ -66,112 +75,140 @@ typedef struct MIPS_code_node_label
 typedef struct MIPS_code_node_li
 {
     int kind;
-    MIPS_operand_reg_t *dst;
-    MIPS_operand_reg_t *src;
+    MIPS_operand_t *dst;
+    MIPS_operand_t *src;
 } MIPS_code_node_li_t;
 
 typedef struct MIPS_code_node_la
 {
     int kind;
-    MIPS_operand_reg_t *dst;
-    MIPS_operand_reg_t *src;
+    MIPS_operand_t *dst;
+    MIPS_operand_t *src;
 } MIPS_code_node_la_t;
 
 typedef struct MIPS_code_node_move
 {
     int kind;
-    MIPS_operand_reg_t *dst;
-    MIPS_operand_reg_t *src;
+    MIPS_operand_t *dst;
+    MIPS_operand_t *src;
 } MIPS_code_node_move_t;
 
 typedef struct MIPS_code_node_addi
 {
     int kind;
-    MIPS_operand_reg_t *dst;
-    MIPS_operand_reg_t *src_l;
-    MIPS_operand_reg_t *src_r;
+    MIPS_operand_t *dst;
+    MIPS_operand_t *src_l;
+    MIPS_operand_t *src_r;
 } MIPS_code_node_addi_t;
 
 typedef struct MIPS_code_node_add
 {
     int kind;
-    MIPS_operand_reg_t *dst;
-    MIPS_operand_reg_t *src_l;
-    MIPS_operand_reg_t *src_r;
+    MIPS_operand_t *dst;
+    MIPS_operand_t *src_l;
+    MIPS_operand_t *src_r;
 } MIPS_code_node_add_t;
 
 typedef struct MIPS_code_node_sub
 {
     int kind;
-    MIPS_operand_reg_t *dst;
-    MIPS_operand_reg_t *src_l;
-    MIPS_operand_reg_t *src_r;
+    MIPS_operand_t *dst;
+    MIPS_operand_t *src_l;
+    MIPS_operand_t *src_r;
 } MIPS_code_node_sub_t;
 
 typedef struct MIPS_code_node_mul
 {
     int kind;
-    MIPS_operand_reg_t *dst;
-    MIPS_operand_reg_t *src_l;
-    MIPS_operand_reg_t *src_r;
+    MIPS_operand_t *dst;
+    MIPS_operand_t *src_l;
+    MIPS_operand_t *src_r;
 } MIPS_code_node_mul_t;
 
 typedef struct MIPS_code_node_div
 {
     int kind;
-    MIPS_operand_reg_t *dst;
-    MIPS_operand_reg_t *src;
+    MIPS_operand_t *dst;
+    MIPS_operand_t *src;
 } MIPS_code_node_div_t;
 
 typedef struct MIPS_code_node_mflo
 {
     int kind;
-    MIPS_operand_reg_t *dst;
-    MIPS_operand_reg_t *src;
+    MIPS_operand_t *reg;
 } MIPS_code_node_mflo_t;
 
 typedef struct MIPS_code_node_lw
 {
     int kind;
-    MIPS_operand_reg_t *dst;
-    MIPS_operand_reg_t *src;
+    MIPS_operand_t *dst;
+    MIPS_operand_t *src;
 } MIPS_code_node_lw_t;
 
 typedef struct MIPS_code_node_sw
 {
     int kind;
-    MIPS_operand_reg_t *dst;
-    MIPS_operand_reg_t *src;
+    MIPS_operand_t *dst;
+    MIPS_operand_t *src;
 } MIPS_code_node_sw_t;
 
 typedef struct MIPS_code_node_j
 {
     int kind;
-    MIPS_operand_reg_t *label;
+    MIPS_operand_t *label;
 } MIPS_code_node_j_t;
 
 typedef struct MIPS_code_node_jar
 {
     int kind;
-    const char *func;
+    MIPS_operand_t *func;
 } MIPS_code_node_jar_t;
 
 typedef struct MIPS_code_node_jr
 {
     int kind;
-    MIPS_operand_reg_t *reg;
+    MIPS_operand_t *reg;
 } MIPS_code_node_jr_t;
 
 typedef struct MIPS_code_node_b
 {
     int kind;
     int MIPS_B_kind;
-    MIPS_operand_reg_t *left;
-    MIPS_operand_reg_t *right;
-    MIPS_operand_reg_t *label;
+    MIPS_operand_t *left;
+    MIPS_operand_t *right;
+    MIPS_operand_t *label;
 } MIPS_code_node_b_t;
 
+typedef struct MIPS_code_node_call
+{
+    int kind;
+    const char *syscall;
+} MIPS_code_node_call_t;
 
+typedef struct MIPS_code_node_func
+{
+    int kind;
+    const char *func;
+} MIPS_code_node_func_t;
+
+MIPS_code_node_t *create_MIPS_code_node_label(int label);
+MIPS_code_node_t *create_MIPS_code_node_li(MIPS_operand_t *dst, MIPS_operand_t *src);
+MIPS_code_node_t *create_MIPS_code_node_la(MIPS_operand_t *dst, MIPS_operand_t *src);
+MIPS_code_node_t *create_MIPS_code_node_move(MIPS_operand_t *dst, MIPS_operand_t *src);
+MIPS_code_node_t *create_MIPS_code_node_addi(MIPS_operand_t *dst, MIPS_operand_t *src_l, MIPS_operand_t *src_r);
+MIPS_code_node_t *create_MIPS_code_node_add(MIPS_operand_t *dst, MIPS_operand_t *src_l, MIPS_operand_t *src_r);
+MIPS_code_node_t *create_MIPS_code_node_sub(MIPS_operand_t *dst, MIPS_operand_t *src_l, MIPS_operand_t *src_r);
+MIPS_code_node_t *create_MIPS_code_node_mul(MIPS_operand_t *dst, MIPS_operand_t *src_l, MIPS_operand_t *src_r);
+MIPS_code_node_t *create_MIPS_code_node_div(MIPS_operand_t *dst, MIPS_operand_t *src);
+MIPS_code_node_t *create_MIPS_code_node_mflo(MIPS_operand_t *reg);
+MIPS_code_node_t *create_MIPS_code_node_lw(MIPS_operand_t *dst, MIPS_operand_t *src);
+MIPS_code_node_t *create_MIPS_code_node_sw(MIPS_operand_t *dst, MIPS_operand_t *src);
+MIPS_code_node_t *create_MIPS_code_node_j(MIPS_operand_t *label);
+MIPS_code_node_t *create_MIPS_code_node_jar(MIPS_operand_t *func);
+MIPS_code_node_t *create_MIPS_code_node_jr(MIPS_operand_t *reg);
+MIPS_code_node_t *create_MIPS_code_node_b(int MIPS_B_kind, MIPS_operand_t *left, MIPS_operand_t *right, MIPS_operand_t *label);
+MIPS_code_node_t *create_MIPS_code_node_call();
+MIPS_code_node_t *create_MIPS_code_node_func(const char *func);
 
 typedef struct MIPS_code_line MIPS_code_line_t;
 struct MIPS_code_line
@@ -181,6 +218,8 @@ struct MIPS_code_line
     MIPS_code_line_t *next;
 };
 
+MIPS_code_line_t *create_MIPS_code_line(MIPS_code_node_t *node);
+
 typedef struct MIPS_code_list MIPS_code_list_t;
 struct MIPS_code_list
 {
@@ -188,3 +227,6 @@ struct MIPS_code_list
     MIPS_code_line_t *start;
     MIPS_code_line_t *end;
 };
+
+void init_MIPS_code_list();
+void MIPS_code_list_push_back(MIPS_code_node_t *node);

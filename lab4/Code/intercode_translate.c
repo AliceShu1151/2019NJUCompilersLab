@@ -39,7 +39,7 @@ void intercode_translate(TreeNode *root)
     init_symbol_table();
     init_intercode_list();
     intercode_translate_r(root);
-    print_intercode_list();
+    //print_intercode_list();
 }
 
 void intercode_translate_r(TreeNode *node)

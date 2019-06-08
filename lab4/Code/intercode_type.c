@@ -462,3 +462,8 @@ void print_intercode_list()
         printf("\n");
     }
 }
+
+intercode_line_t *get_intercode_list_start()
+{
+    return intercode_list.start;
+}

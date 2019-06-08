@@ -1,5 +1,65 @@
 #include "intercode_translate.h"
 
+typedef struct var_table_node var_table_node_t;
+struct var_table_node
+{
+    operand_t *operand;
+    int offset;
+    var_table_node_t *next;
+};
+
+typedef struct var_table var_table_t;
+struct var_table
+{
+    int size;
+    int total;
+    var_table_node_t *start;
+    var_table_node_t *end;
+    var_table_t *prev;
+    var_table_t *next;
+};
+
+typedef struct var_table_stack var_table_stack_t;
+struct var_table_stack
+{
+    int size;
+    var_table_t *top;
+};
+
+var_table_node_t *create_var_node(operand_t *operand, int offset);
+int var_in_table(var_table_t *table, operand_t *operand);
+void var_node_push_back(var_table_t *table, var_table_node_t *node);
+void var_node_add(var_table_t *table, operand_t *operand, int *offset_record, int offset_add);
+
+void create_var_table(intercode_line_t *line);
+
+int get_MIPS_var_offset(operand_t *operand);
+void print_var_table_top();
+
+void prologue();
+void epilogue();
+
+#define REG_T_NUM 10
+typedef struct MIPS_reg MIPS_reg_t;
+struct MIPS_reg
+{
+    const char *reg_type;
+    int reg_no;
+};
+
+
+typedef struct MIPS_reg_list MIPS_reg_list_t;
+struct MIPS_reg_list
+{
+    MIPS_reg_t reg[REG_T_NUM];
+};
+
+void init_MIPS_reg_list();
+void init_reg_no();
+MIPS_reg_t *get_reg();
+MIPS_reg_t *create_reg_fp();
+MIPS_reg_t *create_reg_sp();
+
 enum
 {
     MIPS_OPERAND_CONST,
@@ -13,20 +73,24 @@ typedef struct MIPS_operand MIPS_operand_t;
 struct MIPS_operand
 {
     int kind;
-    union {
+    union 
+    {
         int ival;
         int label;
-        const char *reg_type;
+        MIPS_reg_t *reg;
         const char *content;
     };
-    int reg_no;
     int reg_offset;
 };
 
+MIPS_operand_t *load_reg(operand_t *operand);
+void store_reg(MIPS_operand_t *MIPS_operand, operand_t *operand);
+
+MIPS_operand_t *create_MIPS_operand_const_or_reg(operand_t *operand);
 MIPS_operand_t *create_MIPS_operand_const(int ival);
 MIPS_operand_t *create_MIPS_operand_label(int label);
-MIPS_operand_t *create_MIPS_operand_reg(const char *reg_type, int reg_no);
-MIPS_operand_t *create_MIPS_operand_reg_offset(const char *reg_type, int reg_no, int reg_offset);
+MIPS_operand_t *create_MIPS_operand_reg();
+MIPS_operand_t *create_MIPS_operand_reg_offset(MIPS_reg_t *reg, int reg_offset);
 MIPS_operand_t *create_MIPS_operand_string(const char *content);
 void print_MIPS_operand(MIPS_operand_t *operand);
 

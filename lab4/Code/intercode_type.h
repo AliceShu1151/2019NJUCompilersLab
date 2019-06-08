@@ -134,7 +134,6 @@ typedef struct intercode_node_if_goto
 typedef struct intercode_node_return
 {
     int kind;
-    int operand_kind;
     operand_t *ret;
 } intercode_node_return_t;
 
@@ -239,3 +238,4 @@ void intercode_list_push_back(intercode_node_t *node);
 void intercode_list_check_assign();
 
 void print_intercode_list();
+intercode_line_t *get_intercode_list_start();

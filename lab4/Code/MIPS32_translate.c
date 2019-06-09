@@ -256,8 +256,8 @@ void line_inter_to_MIPS_translate_call(intercode_node_call_t *node)
 {
     char *s_1 = malloc(sizeof(char)*100);
     char *s_2 = malloc(sizeof(char)*100);
-    sprintf(s_1, "\tsubu $sp, $sp, %d", (-4)*(arg_num-1));
-    sprintf(s_2, "\taddi $sp, $sp, %d", (4)*(arg_num-1));
+    sprintf(s_1, "\tsubu $sp, $sp, %d", (4)*(arg_num-1));
+    sprintf(s_2, "\taddi $sp, $sp, %d", (-4)*(arg_num-1));
 
     MIPS_code_node_t *nd_1 = create_MIPS_code_node_string(s_1);
     MIPS_code_list_push_back(nd_1);

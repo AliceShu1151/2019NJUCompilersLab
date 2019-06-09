@@ -45,15 +45,15 @@ void var_node_add(var_table_t *table, operand_t *operand, int *offset_record, in
     int flag = var_in_table(table, operand);
     if (flag == -1)
     {
+        *offset_record -= offset_add;
         var_table_node_t *nd = create_var_node(operand, *offset_record);
         var_node_push_back(table, nd);
-        *offset_record += offset_add;
     }
 }
 
 void create_var_table(intercode_line_t *line)
 {
-    int offset_record = 0;
+    int offset_record = -8;
     var_table_t *table = malloc(sizeof(var_table_t));
     table->size = 0;
     table->total = 0;
@@ -122,7 +122,7 @@ void create_var_table(intercode_line_t *line)
         }
         itor = itor->next;
     }
-    table->total = offset_record;
+    table->total = 0 - offset_record;
     var_table = table;
 }
 
@@ -142,6 +142,7 @@ void print_var_table_top()
         print_operand(itor->operand);
         printf(" %d\n", itor->offset);
     }
+    printf("total: %d\n", table->total);
 }
 
 void prologue()
@@ -150,10 +151,10 @@ void prologue()
     char *s_2 = malloc(sizeof(char)*100);
     char *s_3 = malloc(sizeof(char)*100);
     char *s_4 = malloc(sizeof(char)*100);
-    sprintf(s_1, "\tsubu $sp, $sp, %d", var_table->total+8);
-    sprintf(s_2, "\tsw $ra, %d($sp)", var_table->total+4);
-    sprintf(s_3, "\tsw $fp, %d($sp)", var_table->total);
-    sprintf(s_4, "\taddi $fp, $sp, %d", var_table->total+8);
+    sprintf(s_1, "\tsubu $sp, $sp, %d", var_table->total);
+    sprintf(s_2, "\tsw $ra, %d($sp)", var_table->total-4);
+    sprintf(s_3, "\tsw $fp, %d($sp)", var_table->total-8);
+    sprintf(s_4, "\taddi $fp, $sp, %d", var_table->total);
     MIPS_code_node_t *nd_1 = create_MIPS_code_node_string(s_1);
     MIPS_code_node_t *nd_2 = create_MIPS_code_node_string(s_2);
     MIPS_code_node_t *nd_3 = create_MIPS_code_node_string(s_3);
@@ -169,9 +170,9 @@ void epilogue()
     char *s_1 = malloc(sizeof(char)*100);
     char *s_2 = malloc(sizeof(char)*100);
     char *s_3 = malloc(sizeof(char)*100);
-    sprintf(s_1, "\tlw $ra, %d($sp)", var_table->total+4);
-    sprintf(s_2, "\tlw $fp, %d($sp)", var_table->total);
-    sprintf(s_3, "\taddi $sp, $sp, %d", var_table->total+8);
+    sprintf(s_1, "\tlw $ra, %d($sp)", var_table->total-4);
+    sprintf(s_2, "\tlw $fp, %d($sp)", var_table->total-8);
+    sprintf(s_3, "\taddi $sp, $sp, %d", var_table->total);
     MIPS_code_node_t *nd_1 = create_MIPS_code_node_string(s_1);
     MIPS_code_node_t *nd_2 = create_MIPS_code_node_string(s_2);
     MIPS_code_node_t *nd_3 = create_MIPS_code_node_string(s_3);

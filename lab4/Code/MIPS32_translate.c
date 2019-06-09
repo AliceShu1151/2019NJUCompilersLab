@@ -1,7 +1,7 @@
 #include "MIPS32_translate.h"
 
-static int is_func_main = 0;
 static int arg_num = 0;
+static int param_num = 0;
 static int is_write_arg = 0;
 
 void line_inter_to_MIPS_translate(intercode_node_t *node);
@@ -24,6 +24,7 @@ void line_inter_to_MIPS_translate_write(intercode_node_write_t *node);
 
 void MIPS32_translate()
 {
+    //print_intercode_list();
     init_MIPS_code_list();
     init_MIPS_reg_list();
     intercode_line_t *itor = get_intercode_list_start();
@@ -34,16 +35,9 @@ void MIPS32_translate()
         line_inter_to_MIPS_translate(itor->node);
         if (itor->node->kind == CODE_FUNC) 
         {
-            intercode_node_func_t *func_node = (intercode_node_func_t *)itor->node;
             create_var_table(itor->next);
-                prologue();
-            if (strcmp(func_node->func_name, "main") != 0)
-            {
-                is_func_main = 0;
-                //print_var_table_top();
-            }
-            else
-                is_func_main = 1;
+            prologue();
+            //print_var_table_top();
         }
         itor = itor->next;
     }
@@ -98,6 +92,7 @@ void line_inter_to_MIPS_translate_func(intercode_node_func_t *node)
     assert(node->kind = CODE_FUNC);
     MIPS_code_node_t *MIPS_node = create_MIPS_code_node_func(node->func_name);
     MIPS_code_list_push_back(MIPS_node);
+    param_num = 0;
 }
 
 void line_inter_to_MIPS_translate_assign(intercode_node_assign_t *node)
@@ -190,8 +185,8 @@ void line_inter_to_MIPS_translate_dref(intercode_node_dref_t *node)
 void line_inter_to_MIPS_translate_dref_assign(intercode_node_dref_assign_t *node)
 {
     MIPS_operand_t *left = load_reg(node->left);
-    MIPS_operand_t *left_address = create_MIPS_operand_reg_offset(left->reg, 0);
     MIPS_operand_t *right = load_reg(node->right);
+    MIPS_operand_t *left_address = create_MIPS_operand_reg_offset(left->reg, 0);
     MIPS_code_node_t *MIPS_node_sw = create_MIPS_code_node_sw(right, left_address);
     MIPS_code_list_push_back(MIPS_node_sw);
 }
@@ -229,9 +224,8 @@ void line_inter_to_MIPS_translate_return(intercode_node_return_t *node)
     MIPS_operand_t *ret = load_reg(node->ret);
     MIPS_code_node_t *MIPS_node_rtn = create_MIPS_code_node_move(create_MIPS_operand_string("$v0"),ret);
     MIPS_code_list_push_back(MIPS_node_rtn);
-    if (!is_func_main)
-        epilogue();
 
+    epilogue();
     MIPS_code_node_t *MIPS_node_jr = create_MIPS_code_node_jr(create_MIPS_operand_string("$ra"));
     MIPS_code_list_push_back(MIPS_node_jr);
 }
@@ -284,7 +278,18 @@ void line_inter_to_MIPS_translate_call(intercode_node_call_t *node)
 
 void line_inter_to_MIPS_translate_param(intercode_node_param_t *node)
 {
-    return;
+    MIPS_reg_t *fp = create_reg_fp();
+    int dst_offset = get_MIPS_var_offset(create_operand_var(OPERAND_VARIABLE_V, node->var_no));
+    MIPS_operand_t *dst = create_MIPS_operand_reg_offset(fp, dst_offset);
+    MIPS_operand_t *src = create_MIPS_operand_reg_offset(fp, param_num*(-4));
+
+    MIPS_operand_t *src_reg = create_MIPS_operand_reg();
+    MIPS_code_node_t *lw = create_MIPS_code_node_lw(src_reg,src);
+    MIPS_code_list_push_back(lw);
+
+    MIPS_code_node_t *sw = create_MIPS_code_node_sw(src_reg,dst);
+    MIPS_code_list_push_back(sw);
+    param_num++;
 }
 
 void line_inter_to_MIPS_translate_read(intercode_node_read_t *node)

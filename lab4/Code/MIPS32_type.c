@@ -707,7 +707,7 @@ void init_MIPS_code_list()
     MIPS_code_list.size = 0;
     MIPS_code_node_t *line[20];
     line[0] = create_MIPS_code_node_string(".data");
-    line[1] = create_MIPS_code_node_string("_prompt: .asciiz \"Enter an interger:\"");
+    line[1] = create_MIPS_code_node_string("_prompt: .asciiz \"Enter an integer:\"");
     line[2] = create_MIPS_code_node_string("_ret: .asciiz \"\\n\"");
     line[3] = create_MIPS_code_node_string(".globl main");
     line[4] = create_MIPS_code_node_string(".text");

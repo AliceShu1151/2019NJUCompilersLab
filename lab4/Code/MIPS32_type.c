@@ -1,6 +1,6 @@
 #include "MIPS32_type.h"
 #include <assert.h>
-
+FILE *fout;
 
 static var_table_t *var_table;
 static MIPS_code_list_t MIPS_code_list;
@@ -139,8 +139,8 @@ void print_var_table_top()
         return;
     for (var_table_node_t *itor = table->start; itor != NULL; itor = itor->next)
     {
-        print_operand(itor->operand);
-        printf(" %d\n", itor->offset);
+        //print_operand(itor->operand);
+        //printf(" %d\n", itor->offset);
     }
     printf("total: %d\n", table->total);
 }
@@ -297,33 +297,33 @@ MIPS_operand_t *create_MIPS_operand_string(const char *content)
     return rtn;
 }
 
-void print_MIPS_operand(MIPS_operand_t *MIPS_operand)
+void fprint_MIPS_operand(MIPS_operand_t *MIPS_operand)
 {
     if (MIPS_operand->kind == MIPS_OPERAND_CONST)
     {
-        printf("%d", MIPS_operand->ival);
+        fprintf(fout, "%d", MIPS_operand->ival);
     }
     else if (MIPS_operand->kind == MIPS_OPERAND_LABEL)
     {
-        printf("label%d", MIPS_operand->label);
+        fprintf(fout, "label%d", MIPS_operand->label);
     }
     else if (MIPS_operand->kind == MIPS_OPERAND_REG)
     {
         if (MIPS_operand->reg->reg_no == -1)
-            printf("$%s", MIPS_operand->reg->reg_type);
+            fprintf(fout, "$%s", MIPS_operand->reg->reg_type);
         else
-            printf("$%s%d", MIPS_operand->reg->reg_type, MIPS_operand->reg->reg_no);
+            fprintf(fout, "$%s%d", MIPS_operand->reg->reg_type, MIPS_operand->reg->reg_no);
     }
     else if (MIPS_operand->kind == MIPS_OPERAND_REG_OFFSET)
     {
         if (MIPS_operand->reg->reg_no == -1)
-            printf("%d($%s)", MIPS_operand->reg_offset, MIPS_operand->reg->reg_type);
+            fprintf(fout, "%d($%s)", MIPS_operand->reg_offset, MIPS_operand->reg->reg_type);
         else
-            printf("%d($%s%d)", MIPS_operand->reg_offset, MIPS_operand->reg->reg_type, MIPS_operand->reg->reg_no);
+            fprintf(fout, "%d($%s%d)", MIPS_operand->reg_offset, MIPS_operand->reg->reg_type, MIPS_operand->reg->reg_no);
     }
     else if (MIPS_operand->kind == MIPS_OPERAND_STRING)
     {
-        printf("%s", MIPS_operand->content);
+        fprintf(fout, "%s", MIPS_operand->content);
     }
 }
 
@@ -496,200 +496,200 @@ MIPS_code_node_t *create_MIPS_code_node_string(const char *content)
     return (MIPS_code_node_t*)rtn;
 }
 
-void print_MIPS_node(MIPS_code_node_t *node)
+void fprint_MIPS_node(MIPS_code_node_t *node)
 {
     if (node->kind == MIPS_LABEL)
-        print_MIPS_node_label((MIPS_code_node_label_t *)node);
+        fprint_MIPS_node_label((MIPS_code_node_label_t *)node);
     else if (node->kind == MIPS_LI)
-        print_MIPS_node_li((MIPS_code_node_li_t *)node);
+        fprint_MIPS_node_li((MIPS_code_node_li_t *)node);
     else if (node->kind == MIPS_LA)
-        print_MIPS_node_la((MIPS_code_node_la_t *)node);
+        fprint_MIPS_node_la((MIPS_code_node_la_t *)node);
     else if (node->kind == MIPS_MOVE)
-        print_MIPS_node_move((MIPS_code_node_move_t *)node);
+        fprint_MIPS_node_move((MIPS_code_node_move_t *)node);
     else if (node->kind == MIPS_ADDI)
-        print_MIPS_node_addi((MIPS_code_node_addi_t *)node);
+        fprint_MIPS_node_addi((MIPS_code_node_addi_t *)node);
     else if (node->kind == MIPS_ADD)
-        print_MIPS_node_add((MIPS_code_node_add_t *)node);
+        fprint_MIPS_node_add((MIPS_code_node_add_t *)node);
     else if (node->kind == MIPS_SUB)
-        print_MIPS_node_sub((MIPS_code_node_sub_t *)node);
+        fprint_MIPS_node_sub((MIPS_code_node_sub_t *)node);
     else if (node->kind == MIPS_MUL)
-        print_MIPS_node_mul((MIPS_code_node_mul_t *)node);
+        fprint_MIPS_node_mul((MIPS_code_node_mul_t *)node);
     else if (node->kind == MIPS_DIV)
-        print_MIPS_node_div((MIPS_code_node_div_t *)node);
+        fprint_MIPS_node_div((MIPS_code_node_div_t *)node);
     else if (node->kind == MIPS_MFLO)
-        print_MIPS_node_mflo((MIPS_code_node_mflo_t *)node);
+        fprint_MIPS_node_mflo((MIPS_code_node_mflo_t *)node);
     else if (node->kind == MIPS_LW)
-        print_MIPS_node_lw((MIPS_code_node_lw_t *)node);
+        fprint_MIPS_node_lw((MIPS_code_node_lw_t *)node);
     else if (node->kind == MIPS_SW)
-        print_MIPS_node_sw((MIPS_code_node_sw_t *)node);
+        fprint_MIPS_node_sw((MIPS_code_node_sw_t *)node);
     else if (node->kind == MIPS_J)
-        print_MIPS_node_j((MIPS_code_node_j_t *)node);
+        fprint_MIPS_node_j((MIPS_code_node_j_t *)node);
     else if (node->kind == MIPS_JAL)
-        print_MIPS_node_jal((MIPS_code_node_jal_t *)node);
+        fprint_MIPS_node_jal((MIPS_code_node_jal_t *)node);
     else if (node->kind == MIPS_JR)
-        print_MIPS_node_jr((MIPS_code_node_jr_t *)node);
+        fprint_MIPS_node_jr((MIPS_code_node_jr_t *)node);
     else if (node->kind == MIPS_B)
-        print_MIPS_node_b((MIPS_code_node_b_t *)node);
+        fprint_MIPS_node_b((MIPS_code_node_b_t *)node);
     else if (node->kind == MIPS_CALL)
-        print_MIPS_node_call((MIPS_code_node_call_t *)node);
+        fprint_MIPS_node_call((MIPS_code_node_call_t *)node);
     else if (node->kind == MIPS_FUNC)
-        print_MIPS_node_func((MIPS_code_node_func_t *)node);
+        fprint_MIPS_node_func((MIPS_code_node_func_t *)node);
     else if (node->kind == MIPS_STRING)
-        print_MIPS_node_string((MIPS_code_node_string_t *)node);
+        fprint_MIPS_node_string((MIPS_code_node_string_t *)node);
 }
 
-void print_MIPS_node_label(MIPS_code_node_label_t *node)
+void fprint_MIPS_node_label(MIPS_code_node_label_t *node)
 {
-    printf("label%d:", node->label);
+    fprintf(fout, "label%d:", node->label);
 }
 
 
-void print_MIPS_node_li(MIPS_code_node_li_t *node)
+void fprint_MIPS_node_li(MIPS_code_node_li_t *node)
 {
-    printf("\tli ");
-    print_MIPS_operand(node->dst);
-    printf(", ");
-    print_MIPS_operand(node->src);
+    fprintf(fout, "\tli ");
+    fprint_MIPS_operand(node->dst);
+    fprintf(fout, ", ");
+    fprint_MIPS_operand(node->src);
 }
 
-void print_MIPS_node_la(MIPS_code_node_la_t *node)
+void fprint_MIPS_node_la(MIPS_code_node_la_t *node)
 {
-    printf("\tla ");
-    print_MIPS_operand(node->dst);
-    printf(", ");
-    print_MIPS_operand(node->src);
+    fprintf(fout, "\tla ");
+    fprint_MIPS_operand(node->dst);
+    fprintf(fout, ", ");
+    fprint_MIPS_operand(node->src);
 }
 
-void print_MIPS_node_move(MIPS_code_node_move_t *node)
+void fprint_MIPS_node_move(MIPS_code_node_move_t *node)
 {
-    printf("\tmove ");
-    print_MIPS_operand(node->dst);
-    printf(", ");
-    print_MIPS_operand(node->src);
+    fprintf(fout, "\tmove ");
+    fprint_MIPS_operand(node->dst);
+    fprintf(fout, ", ");
+    fprint_MIPS_operand(node->src);
 }
 
-void print_MIPS_node_addi(MIPS_code_node_addi_t *node)
+void fprint_MIPS_node_addi(MIPS_code_node_addi_t *node)
 {
-    printf("\taddi ");
-    print_MIPS_operand(node->dst);
-    printf(", ");
-    print_MIPS_operand(node->src_l);
-    printf(", ");
-    print_MIPS_operand(node->src_r);
+    fprintf(fout, "\taddi ");
+    fprint_MIPS_operand(node->dst);
+    fprintf(fout, ", ");
+    fprint_MIPS_operand(node->src_l);
+    fprintf(fout, ", ");
+    fprint_MIPS_operand(node->src_r);
 }
 
-void print_MIPS_node_add(MIPS_code_node_add_t *node)
+void fprint_MIPS_node_add(MIPS_code_node_add_t *node)
 {
-    printf("\tadd ");
-    print_MIPS_operand(node->dst);
-    printf(", ");
-    print_MIPS_operand(node->src_l);
-    printf(", ");
-    print_MIPS_operand(node->src_r);
+    fprintf(fout, "\tadd ");
+    fprint_MIPS_operand(node->dst);
+    fprintf(fout, ", ");
+    fprint_MIPS_operand(node->src_l);
+    fprintf(fout, ", ");
+    fprint_MIPS_operand(node->src_r);
 }
 
-void print_MIPS_node_sub(MIPS_code_node_sub_t *node)
+void fprint_MIPS_node_sub(MIPS_code_node_sub_t *node)
 {
-    printf("\tsub ");
-    print_MIPS_operand(node->dst);
-    printf(", ");
-    print_MIPS_operand(node->src_l);
-    printf(", ");
-    print_MIPS_operand(node->src_r);
+    fprintf(fout, "\tsub ");
+    fprint_MIPS_operand(node->dst);
+    fprintf(fout, ", ");
+    fprint_MIPS_operand(node->src_l);
+    fprintf(fout, ", ");
+    fprint_MIPS_operand(node->src_r);
 }
 
-void print_MIPS_node_mul(MIPS_code_node_mul_t *node)
+void fprint_MIPS_node_mul(MIPS_code_node_mul_t *node)
 {
-    printf("\tmul ");
-    print_MIPS_operand(node->dst);
-    printf(", ");
-    print_MIPS_operand(node->src_l);
-    printf(", ");
-    print_MIPS_operand(node->src_r);
+    fprintf(fout, "\tmul ");
+    fprint_MIPS_operand(node->dst);
+    fprintf(fout, ", ");
+    fprint_MIPS_operand(node->src_l);
+    fprintf(fout, ", ");
+    fprint_MIPS_operand(node->src_r);
 }
 
-void print_MIPS_node_div(MIPS_code_node_div_t *node)
+void fprint_MIPS_node_div(MIPS_code_node_div_t *node)
 {
-    printf("\tdiv ");
-    print_MIPS_operand(node->dst);
-    printf(", ");
-    print_MIPS_operand(node->src);
+    fprintf(fout, "\tdiv ");
+    fprint_MIPS_operand(node->dst);
+    fprintf(fout, ", ");
+    fprint_MIPS_operand(node->src);
 }
 
-void print_MIPS_node_mflo(MIPS_code_node_mflo_t *node)
+void fprint_MIPS_node_mflo(MIPS_code_node_mflo_t *node)
 {
-    printf("\tmflo ");
-    print_MIPS_operand(node->reg);
+    fprintf(fout, "\tmflo ");
+    fprint_MIPS_operand(node->reg);
 }
 
-void print_MIPS_node_lw(MIPS_code_node_lw_t *node)
+void fprint_MIPS_node_lw(MIPS_code_node_lw_t *node)
 {
-    printf("\tlw ");
-    print_MIPS_operand(node->dst);
-    printf(", ");
-    print_MIPS_operand(node->src);
+    fprintf(fout, "\tlw ");
+    fprint_MIPS_operand(node->dst);
+    fprintf(fout, ", ");
+    fprint_MIPS_operand(node->src);
 }
 
-void print_MIPS_node_sw(MIPS_code_node_sw_t *node)
+void fprint_MIPS_node_sw(MIPS_code_node_sw_t *node)
 {
-    printf("\tsw ");
-    print_MIPS_operand(node->dst);
-    printf(", ");
-    print_MIPS_operand(node->src);
+    fprintf(fout, "\tsw ");
+    fprint_MIPS_operand(node->dst);
+    fprintf(fout, ", ");
+    fprint_MIPS_operand(node->src);
 }
 
-void print_MIPS_node_j(MIPS_code_node_j_t *node)
+void fprint_MIPS_node_j(MIPS_code_node_j_t *node)
 {
-    printf("\tj ");
-    print_MIPS_operand(node->label);
+    fprintf(fout, "\tj ");
+    fprint_MIPS_operand(node->label);
 }
 
-void print_MIPS_node_jal(MIPS_code_node_jal_t *node)
+void fprint_MIPS_node_jal(MIPS_code_node_jal_t *node)
 {
-    printf("\tjal ");
-    print_MIPS_operand(node->func);
+    fprintf(fout, "\tjal ");
+    fprint_MIPS_operand(node->func);
 }
 
-void print_MIPS_node_jr(MIPS_code_node_jr_t *node)
+void fprint_MIPS_node_jr(MIPS_code_node_jr_t *node)
 {
-    printf("\tjr ");
-    print_MIPS_operand(node->reg);
+    fprintf(fout, "\tjr ");
+    fprint_MIPS_operand(node->reg);
 }
 
-void print_MIPS_node_b(MIPS_code_node_b_t *node)
+void fprint_MIPS_node_b(MIPS_code_node_b_t *node)
 {
     if (node->MIPS_B_kind == MIPS_B_EQ)
-        printf("\tbeq ");
+        fprintf(fout, "\tbeq ");
     else if (node->MIPS_B_kind == MIPS_B_NE)
-        printf("\tbne ");
+        fprintf(fout, "\tbne ");
     else if (node->MIPS_B_kind == MIPS_B_GT)
-        printf("\tbgt ");
+        fprintf(fout, "\tbgt ");
     else if (node->MIPS_B_kind == MIPS_B_LT)
-        printf("\tblt ");
+        fprintf(fout, "\tblt ");
     else if (node->MIPS_B_kind == MIPS_B_GE)
-        printf("\tbge ");
+        fprintf(fout, "\tbge ");
     else if (node->MIPS_B_kind == MIPS_B_LE)
-        printf("\tble ");
-    print_MIPS_operand(node->left);
-    printf(", ");
-    print_MIPS_operand(node->right);
-    printf(", ");
-    print_MIPS_operand(node->label);
+        fprintf(fout, "\tble ");
+    fprint_MIPS_operand(node->left);
+    fprintf(fout, ", ");
+    fprint_MIPS_operand(node->right);
+    fprintf(fout, ", ");
+    fprint_MIPS_operand(node->label);
 }
 
-void print_MIPS_node_call(MIPS_code_node_call_t *node)
+void fprint_MIPS_node_call(MIPS_code_node_call_t *node)
 {
-    printf("\t%s", node->syscall);
+    fprintf(fout, "\t%s", node->syscall);
 }
 
-void print_MIPS_node_func(MIPS_code_node_func_t *node)
+void fprint_MIPS_node_func(MIPS_code_node_func_t *node)
 {
-    printf("\n%s:", node->func);
+    fprintf(fout, "\n%s:", node->func);
 }
 
-void print_MIPS_node_string(MIPS_code_node_string_t *node)
+void fprint_MIPS_node_string(MIPS_code_node_string_t *node)
 {
-    printf("%s", node->content);
+    fprintf(fout, "%s", node->content);
 }
 
 
@@ -747,13 +747,14 @@ void MIPS_code_list_push_back(MIPS_code_node_t *node)
 }
 
 
-void print_MIPS_code_list()
+void fprint_MIPS_code_list(FILE *fp)
 {
     if (MIPS_code_list.size == 0)
         return;
+    fout = fp;
     for (MIPS_code_line_t *itor = MIPS_code_list.start; itor != NULL; itor = itor->next)
     {
-        print_MIPS_node(itor->node);
-        printf("\n");
+        fprint_MIPS_node(itor->node);
+        fprintf(fout, "\n");
     }
 }

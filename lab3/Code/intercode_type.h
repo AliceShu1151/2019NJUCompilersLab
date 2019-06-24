@@ -24,8 +24,8 @@ operand_t *create_operand_const_int(int ival);
 operand_t *create_operand_const_float(float fval);
 operand_t *create_operand_const(TreeNode *node);
 operand_t *create_operand_var(int operand_kind, int var_no);
-void print_operand(operand_t *operand);
-void print_operator(int operator_kind);
+void fprint_operand(operand_t *operand);
+void fprint_operator(int operator_kind);
 
 enum
 {
@@ -195,23 +195,23 @@ intercode_node_t *create_intercode_node_param(int var_no);
 intercode_node_t *create_intercode_node_read(operand_t *var);
 intercode_node_t *create_intercode_node_write(operand_t *var);
 
-void print_intercode_node(intercode_node_t *node);
-void print_intercode_node_label(intercode_node_label_t *node);
-void print_intercode_node_func(intercode_node_func_t *node);
-void print_intercode_node_assign(intercode_node_assign_t *node);
-void print_intercode_node_binary(intercode_node_binary_t *node);
-void print_intercode_node_ref(intercode_node_ref_t *node);
-void print_intercode_node_dref(intercode_node_dref_t *node);
-void print_intercode_node_dref_assign(intercode_node_dref_assign_t *node);
-void print_intercode_node_goto(intercode_node_goto_t *node);
-void print_intercode_node_if_goto(intercode_node_if_goto_t *node);
-void print_intercode_node_return(intercode_node_return_t *node);
-void print_intercode_node_dec(intercode_node_dec_t *node);
-void print_intercode_node_arg(intercode_node_arg_t *node);
-void print_intercode_node_call(intercode_node_call_t *node);
-void print_intercode_node_param(intercode_node_param_t *node);
-void print_intercode_node_read(intercode_node_read_t *node);
-void print_intercode_node_write(intercode_node_write_t *node);
+void fprint_intercode_node(intercode_node_t *node);
+void fprint_intercode_node_label(intercode_node_label_t *node);
+void fprint_intercode_node_func(intercode_node_func_t *node);
+void fprint_intercode_node_assign(intercode_node_assign_t *node);
+void fprint_intercode_node_binary(intercode_node_binary_t *node);
+void fprint_intercode_node_ref(intercode_node_ref_t *node);
+void fprint_intercode_node_dref(intercode_node_dref_t *node);
+void fprint_intercode_node_dref_assign(intercode_node_dref_assign_t *node);
+void fprint_intercode_node_goto(intercode_node_goto_t *node);
+void fprint_intercode_node_if_goto(intercode_node_if_goto_t *node);
+void fprint_intercode_node_return(intercode_node_return_t *node);
+void fprint_intercode_node_dec(intercode_node_dec_t *node);
+void fprint_intercode_node_arg(intercode_node_arg_t *node);
+void fprint_intercode_node_call(intercode_node_call_t *node);
+void fprint_intercode_node_param(intercode_node_param_t *node);
+void fprint_intercode_node_read(intercode_node_read_t *node);
+void fprint_intercode_node_write(intercode_node_write_t *node);
 
 const char *relop_not(const char *relop);
 
@@ -238,4 +238,4 @@ void init_intercode_list();
 void intercode_list_push_back(intercode_node_t *node);
 void intercode_list_check_assign();
 
-void print_intercode_list();
+void fprint_intercode_list(FILE *fp);

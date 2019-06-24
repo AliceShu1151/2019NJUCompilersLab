@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+FILE *fout;
+
 static intercode_list_t intercode_list;
 
 
@@ -39,45 +41,45 @@ operand_t *create_operand_var(int operand_kind, int var_no)
     return rtn;
 }
 
-void print_operand(operand_t *operand)
+void fprint_operand(operand_t *operand)
 {
     assert(operand != NULL);
     if (operand->kind == OPERAND_VARIABLE_T)
-        printf("t%d", operand->var_no);
+        fprintf(fout, "t%d", operand->var_no);
     else if (operand->kind == OPERAND_VARIABLE_V)
-        printf("v%d", operand->var_no);
+        fprintf(fout, "v%d", operand->var_no);
     else if (operand->kind == OPERAND_CONSTANT_I)
-        printf("#%d", operand->value_int);
+        fprintf(fout, "#%d", operand->value_int);
     else if (operand->kind == OPERAND_CONSTANT_F)
-        printf("#%f", operand->value_flt);
+        fprintf(fout, "#%f", operand->value_flt);
     else if (operand->kind == OPERAND_ADDRESS_T)
-        printf("t%d", operand->var_no);
+        fprintf(fout, "t%d", operand->var_no);
     else if (operand->kind == OPERAND_ADDRESS_V)
-        printf("v%d", operand->var_no);
+        fprintf(fout, "v%d", operand->var_no);
 }
 
-void print_operator(int operator_kind)
+void fprint_operator(int operator_kind)
 {
     if (operator_kind == OPERATOR_EQ)
-        printf(" == ");
+        fprintf(fout, " == ");
     else if (operator_kind == OPERATOR_NEQ)
-        printf(" != ");
+        fprintf(fout, " != ");
     else if (operator_kind == OPERATOR_G)
-        printf(" > ");
+        fprintf(fout, " > ");
     else if (operator_kind == OPERATOR_GE)
-        printf(" >= ");
+        fprintf(fout, " >= ");
     else if (operator_kind == OPERATOR_L)
-        printf(" < ");
+        fprintf(fout, " < ");
     else if (operator_kind == OPERATOR_LE)
-        printf(" <= ");
+        fprintf(fout, " <= ");
     else if (operator_kind == OPERATOR_PLS)
-        printf(" + ");
+        fprintf(fout, " + ");
     else if (operator_kind == OPERATOR_MIN)
-        printf(" - ");
+        fprintf(fout, " - ");
     else if (operator_kind == OPERATOR_STAR)
-        printf(" * ");
+        fprintf(fout, " * ");
     else if (operator_kind == OPERATOR_DIV)
-        printf(" / ");
+        fprintf(fout, " / ");
 }
 
 intercode_node_t *create_intercode_node_label(int label)
@@ -221,143 +223,143 @@ intercode_node_t *create_intercode_node_write(operand_t *var)
     return (intercode_node_t *)rtn;
 }
 
-void print_intercode_node(intercode_node_t *node)
+void fprint_intercode_node(intercode_node_t *node)
 {
     assert(node != NULL);
     if (node->kind == CODE_LABEL)
-        print_intercode_node_label((intercode_node_label_t *)node);
+        fprint_intercode_node_label((intercode_node_label_t *)node);
     else if (node->kind == CODE_FUNC)
-        print_intercode_node_func((intercode_node_func_t *)node);
+        fprint_intercode_node_func((intercode_node_func_t *)node);
     else if (node->kind == CODE_ASSIGN)
-        print_intercode_node_assign((intercode_node_assign_t *)node);
+        fprint_intercode_node_assign((intercode_node_assign_t *)node);
     else if (node->kind == CODE_OPERATOR)
-        print_intercode_node_binary((intercode_node_binary_t *)node);
+        fprint_intercode_node_binary((intercode_node_binary_t *)node);
     else if (node->kind == CODE_REF)
-        print_intercode_node_ref((intercode_node_ref_t *)node);
+        fprint_intercode_node_ref((intercode_node_ref_t *)node);
     else if (node->kind == CODE_DREF)
-        print_intercode_node_dref((intercode_node_dref_t *)node);
+        fprint_intercode_node_dref((intercode_node_dref_t *)node);
     else if (node->kind == CODE_DREF_ASSIGN)
-        print_intercode_node_dref_assign((intercode_node_dref_assign_t *)node);
+        fprint_intercode_node_dref_assign((intercode_node_dref_assign_t *)node);
     else if (node->kind == CODE_GOTO)
-        print_intercode_node_goto((intercode_node_goto_t *)node);
+        fprint_intercode_node_goto((intercode_node_goto_t *)node);
     else if (node->kind == CODE_IF_GOTO)
-        print_intercode_node_if_goto((intercode_node_if_goto_t *)node);
+        fprint_intercode_node_if_goto((intercode_node_if_goto_t *)node);
     else if (node->kind == CODE_RETURN)
-        print_intercode_node_return((intercode_node_return_t *)node);
+        fprint_intercode_node_return((intercode_node_return_t *)node);
     else if (node->kind == CODE_DEC)
-        print_intercode_node_dec((intercode_node_dec_t *)node);
+        fprint_intercode_node_dec((intercode_node_dec_t *)node);
     else if (node->kind == CODE_ARG)
-        print_intercode_node_arg((intercode_node_arg_t *)node);
+        fprint_intercode_node_arg((intercode_node_arg_t *)node);
     else if (node->kind == CODE_CALL)
-        print_intercode_node_call((intercode_node_call_t *)node);
+        fprint_intercode_node_call((intercode_node_call_t *)node);
     else if (node->kind == CODE_PARAM)
-        print_intercode_node_param((intercode_node_param_t *)node);
+        fprint_intercode_node_param((intercode_node_param_t *)node);
     else if (node->kind == CODE_READ)
-        print_intercode_node_read((intercode_node_read_t *)node);
+        fprint_intercode_node_read((intercode_node_read_t *)node);
     else if (node->kind == CODE_WRITE)
-        print_intercode_node_write((intercode_node_write_t *)node);
+        fprint_intercode_node_write((intercode_node_write_t *)node);
 }
 
-void print_intercode_node_label(intercode_node_label_t *node)
+void fprint_intercode_node_label(intercode_node_label_t *node)
 {
-    printf("LABEL L%d : ", node->label);
+    fprintf(fout, "LABEL L%d : ", node->label);
 }
 
-void print_intercode_node_func(intercode_node_func_t *node)
+void fprint_intercode_node_func(intercode_node_func_t *node)
 {
-    printf("FUNCTION %s : ", node->func_name);
+    fprintf(fout, "FUNCTION %s : ", node->func_name);
 }
 
-void print_intercode_node_assign(intercode_node_assign_t *node)
+void fprint_intercode_node_assign(intercode_node_assign_t *node)
 {
-    print_operand(node->left);
-    printf(" := ");
-    print_operand(node->right);
+    fprint_operand(node->left);
+    fprintf(fout, " := ");
+    fprint_operand(node->right);
 }
 
-void print_intercode_node_binary(intercode_node_binary_t *node)
+void fprint_intercode_node_binary(intercode_node_binary_t *node)
 {
-    print_operand(node->target);
-    printf(" := ");
-    print_operand(node->left);
-    print_operator(node->operator_kind);
-    print_operand(node->right);
+    fprint_operand(node->target);
+    fprintf(fout, " := ");
+    fprint_operand(node->left);
+    fprint_operator(node->operator_kind);
+    fprint_operand(node->right);
 }
 
-void print_intercode_node_ref(intercode_node_ref_t *node)
+void fprint_intercode_node_ref(intercode_node_ref_t *node)
 {
-    print_operand(node->left);
-    printf(" := &");
-    print_operand(node->right);
+    fprint_operand(node->left);
+    fprintf(fout, " := &");
+    fprint_operand(node->right);
 }
 
-void print_intercode_node_dref(intercode_node_dref_t *node)
+void fprint_intercode_node_dref(intercode_node_dref_t *node)
 {
-    print_operand(node->left);
-    printf(" := *");
-    print_operand(node->right);
+    fprint_operand(node->left);
+    fprintf(fout, " := *");
+    fprint_operand(node->right);
 }
 
-void print_intercode_node_dref_assign(intercode_node_dref_assign_t *node)
+void fprint_intercode_node_dref_assign(intercode_node_dref_assign_t *node)
 {
-    printf("*");
-    print_operand(node->left);
-    printf(" := ");
-    print_operand(node->right);
+    fprintf(fout, "*");
+    fprint_operand(node->left);
+    fprintf(fout, " := ");
+    fprint_operand(node->right);
 }
 
-void print_intercode_node_goto(intercode_node_goto_t *node)
+void fprint_intercode_node_goto(intercode_node_goto_t *node)
 {
-    printf("GOTO L%d", node->label);
+    fprintf(fout, "GOTO L%d", node->label);
 }
 
-void print_intercode_node_if_goto(intercode_node_if_goto_t *node)
+void fprint_intercode_node_if_goto(intercode_node_if_goto_t *node)
 {
-    printf("IF ");
-    print_operand(node->if_left);
-    printf(" %s ", node->relop);
-    print_operand(node->if_right);
-    printf(" GOTO L%d", node->target_label);
+    fprintf(fout, "IF ");
+    fprint_operand(node->if_left);
+    fprintf(fout, " %s ", node->relop);
+    fprint_operand(node->if_right);
+    fprintf(fout, " GOTO L%d", node->target_label);
 }
 
-void print_intercode_node_return(intercode_node_return_t *node)
+void fprint_intercode_node_return(intercode_node_return_t *node)
 {
-    printf("RETURN ");
-    print_operand(node->ret);
+    fprintf(fout, "RETURN ");
+    fprint_operand(node->ret);
 }
 
-void print_intercode_node_dec(intercode_node_dec_t *node)
+void fprint_intercode_node_dec(intercode_node_dec_t *node)
 {
-    printf("DEC v%d %d", node->var_no, node->size);
+    fprintf(fout, "DEC v%d %d", node->var_no, node->size);
 }
 
-void print_intercode_node_arg(intercode_node_arg_t *node)
+void fprint_intercode_node_arg(intercode_node_arg_t *node)
 {
-    printf("ARG ");
-    print_operand(node->arg);
+    fprintf(fout, "ARG ");
+    fprint_operand(node->arg);
 }
 
-void print_intercode_node_call(intercode_node_call_t *node)
+void fprint_intercode_node_call(intercode_node_call_t *node)
 {
-    print_operand(node->call_rtn);
-    printf(" := CALL %s", node->call_name);
+    fprint_operand(node->call_rtn);
+    fprintf(fout, " := CALL %s", node->call_name);
 }
 
-void print_intercode_node_param(intercode_node_param_t *node)
+void fprint_intercode_node_param(intercode_node_param_t *node)
 {
-    printf("PARAM v%d", node->var_no);
+    fprintf(fout, "PARAM v%d", node->var_no);
 }
 
-void print_intercode_node_read(intercode_node_read_t *node)
+void fprint_intercode_node_read(intercode_node_read_t *node)
 {
-    printf("READ ");
-    print_operand(node->var);
+    fprintf(fout, "READ ");
+    fprint_operand(node->var);
 }
 
-void print_intercode_node_write(intercode_node_write_t *node)
+void fprint_intercode_node_write(intercode_node_write_t *node)
 {
-    printf("WRITE ");
-    print_operand(node->var);
+    fprintf(fout, "WRITE ");
+    fprint_operand(node->var);
 }
 
 const char *relop_not(const char *relop)
@@ -414,7 +416,6 @@ void intercode_list_push_back(intercode_node_t *node)
     {
         intercode_list_check_assign();
     }
-    
 }
 
 void intercode_list_check_assign()
@@ -452,14 +453,15 @@ void intercode_list_check_assign()
     }
 }
 
-void print_intercode_list()
+void fprint_intercode_list(FILE *fp)
 {
+    fout = fp;
     if (intercode_list.size == 0)
         return;
     for (intercode_line_t *itor = intercode_list.start; itor != NULL; itor = itor->next)
     {
-        print_intercode_node(itor->node);
-        printf("\n");
+        fprint_intercode_node(itor->node);
+        fprintf(fout, "\n");
     }
 }
 

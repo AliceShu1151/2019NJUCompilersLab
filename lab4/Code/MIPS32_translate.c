@@ -24,7 +24,6 @@ void line_inter_to_MIPS_translate_write(intercode_node_write_t *node);
 
 void MIPS32_translate()
 {
-    //print_intercode_list();
     init_MIPS_code_list();
     init_MIPS_reg_list();
     intercode_line_t *itor = get_intercode_list_start();
@@ -41,7 +40,6 @@ void MIPS32_translate()
         }
         itor = itor->next;
     }
-    print_MIPS_code_list();
 }
 
 void line_inter_to_MIPS_translate(intercode_node_t *node)

@@ -5,6 +5,7 @@
 #define YYSTYPE TreeNode*
 #define YYERROR_VERBOSE 1
 #include "lex.yy.c"
+extern FILE *fout;
 
 int PRINT_TREE = 1;
 
@@ -42,6 +43,7 @@ Program :   ExtDefList  {
                     semantic_analysis($$);
                     if (!has_semantic_error()) {
                         intercode_translate($$);
+                        fprint_intercode_list(fout);
                     }
                 }
             }
